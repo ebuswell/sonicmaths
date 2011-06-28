@@ -1,6 +1,6 @@
-/** @file math.h
+/** @file controller.h
  *
- * Miscellaneous mathematical functions for Sonic Maths.
+ * Controller
  *
  */
 /*
@@ -21,12 +21,30 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_MATH_H
-#define SONICMATHS_MATH_H 1
+#ifndef SONICMATHS_CONTROLLER_H
+#define SONICMATHS_CONTROLLER_H 1
 
-#include <stdlib.h>
+#include <sonicmaths/graph.h>
+#include <graphline.h>
 
-#define frandomf() ((float) random() / (((float) RAND_MAX) + 1.0f))
-#define randomf() ((double) random() / (((double) RAND_MAX) + 1.0))
+/**
+ * Controller
+ */
+struct smaths_ctlr {
+    struct smaths_graph *graph;
+    struct gln_node node;
+    struct gln_socket out; /** Output */
+    struct gln_socket ctl; /** Output control */
+};
 
-#endif /* ! SONICMATHS_MATH_H */
+/**
+ * Destroy controller
+ */
+void smaths_ctlr_destroy(struct smaths_ctlr *ctlr);
+
+/**
+ * Initialize controller
+ */
+int smaths_ctlr_init(struct smaths_ctlr *ctlr, struct smaths_graph *graph, gln_process_fp_t func, void *arg);
+
+#endif /* ! SONICMATHS_CONTROLLER_H */

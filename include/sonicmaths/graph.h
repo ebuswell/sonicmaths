@@ -59,4 +59,8 @@ static inline float smaths_graph_normalized_frequency(struct smaths_graph *graph
     return f / graph->sample_rate;
 }
 
+static inline float smaths_graph_normalized_time(struct smaths_graph *graph, float t) {
+    return t * graph->sample_rate;
+}
+
 #endif /* ! SONICMATHS_GRAPH_H */

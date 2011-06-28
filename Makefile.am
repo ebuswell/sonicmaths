@@ -23,12 +23,12 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = $(PYTHON_SUBDIR)
 
 lib_LTLIBRARIES = libsonicmaths.la
-libsonicmaths_la_SOURCES = src/jbridge.c src/graph.c src/parameter.c src/synth.c src/sine.c
+libsonicmaths_la_SOURCES = src/jbridge.c src/graph.c src/parameter.c src/synth.c src/sine.c src/envelope-generator.c src/controller.c src/instrument.c
 libsonicmaths_la_LIBADD = $(JACK_LIBS) $(SNDFILE_LIBS) $(ATOMICKIT_LIBS) $(GRAPHLINE_LIBS)
 libsonicmaths_la_LDFLAGS = $(LDFLAGS) -L$(libdir) -export-dynamic -version_info @VERSION_INFO@
 libsonicmaths_la_CFLAGS = $(CFLAGS) $(JACK_CFLAGS) $(SNDFILE_CFLAGS) $(ATOMICKIT_CFLAGS) $(GRAPHLINE_CFLAGS) -Wall -Wextra -Iinclude
 libsonicmathsincludedir = $(pkgincludedir)
-libsonicmathsinclude_HEADERS = include/sonicmaths/jbridge.h include/sonicmaths/graph.h include/sonicmaths/parameter.h include/sonicmaths/synth.h include/sonicmaths/sine.h
+libsonicmathsinclude_HEADERS = include/sonicmaths/jbridge.h include/sonicmaths/graph.h include/sonicmaths/parameter.h include/sonicmaths/synth.h include/sonicmaths/sine.h include/sonicmaths/envelope-generator.h include/sonicmaths/controller.h include/sonicmaths/instrument.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = sonicmaths.pc

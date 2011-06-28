@@ -26,6 +26,7 @@
 
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
+#include <math.h>
 
 /**
  * A parameter which may be either static or dynamic
@@ -47,7 +48,12 @@ static inline void smaths_parameter_set(struct smaths_parameter *p, float value)
 }
 
 static inline int smaths_parameter_connect(struct smaths_parameter *p, struct gln_socket *other) {
-    return gln_socket_connect(&p->p_dynamic, other);
+    int r = gln_socket_connect(&p->p_dynamic, other);
+    if(r != 0) {
+	return r;
+    }
+    atomic_float_set(&p->value, NAN);
+    return 0;
 }
 
 #endif /* ! SONICMATHS_PARAMETER_H */

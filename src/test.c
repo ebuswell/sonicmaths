@@ -24,9 +24,12 @@
 #include <sonicmaths/sine.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
+#include <sonicmaths/instrument.h>
+#include <sonicmaths/envelope-generator.h>
 #include <graphline.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -72,6 +75,8 @@
 
 int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
     int r;
+
+    setbuf(stdout, NULL);
 
     jack_status_t status;
     CHECKING(smaths_jbridge_init);
@@ -146,7 +151,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     /* CHECK_R(); */
     /* OK(); */
 
-    CHECKING(smaths_sine_init());
+    CHECKING(smaths_sine_init);
     struct smaths_sine sine;
     r = smaths_sine_init(&sine, &bridge.graph);
     CHECK_R();
@@ -154,14 +159,50 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     OK();
 
-    CHECKING_S("smaths_parameter_set");
-    smaths_parameter_set(&sine.freq, smaths_graph_normalized_frequency(&bridge.graph, 220.0));
+    CHECKING(smaths_parameter_set);
+    smaths_parameter_set(&sine.freq, smaths_graph_normalized_frequency(&bridge.graph, 440.0));
+    sleep(1);
+    smaths_parameter_set(&sine.freq, smaths_graph_normalized_frequency(&bridge.graph, 0.0));
     OK();
 
-    printf("Hit return to quit");
-    getchar();
+    CHECKING(smaths_inst_init);
+    struct smaths_inst inst;
+    r = smaths_inst_init(&inst, &bridge.graph);
+    CHECK_R();
+    OK();
+
+    CHECKING(smaths_parameter_connect);
+    r = smaths_parameter_connect(&sine.freq, &inst.ctlr.out);
+    CHECK_R();
+    OK();
+
+    CHECKING(smaths_envg_init);
+    struct smaths_envg envg;
+    r = smaths_envg_init(&envg, &bridge.graph);
+    CHECK_R();
+    smaths_parameter_set(&envg.attack_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
+    smaths_parameter_set(&envg.decay_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
+    smaths_parameter_set(&envg.sustain_a, 0.65f);
+    smaths_parameter_set(&envg.release_t, smaths_graph_normalized_time(&bridge.graph, 1.0f));
+    r = smaths_parameter_connect(&sine.amp, &envg.out);
+    CHECK_R();
+    r = gln_socket_connect(&envg.ctl, &inst.ctlr.ctl);
+    CHECK_R();
+    OK();
+
+    CHECKING(smaths_inst_play);
+    smaths_inst_play(&inst, smaths_graph_normalized_frequency(&bridge.graph, 880.0f));
+    sleep(2);
+    OK();
+
+    CHECKING(smaths_inst_stop);
+    smaths_inst_stop(&inst);
+    sleep(2);
+    OK();
 
     CHECKING(smaths_jbridge_destroy);
+    smaths_envg_destroy(&envg);
+    smaths_inst_destroy(&inst);
     smaths_sine_destroy(&sine);
     r = smaths_jbridge_destroy(&bridge);
     CHECK_R();
