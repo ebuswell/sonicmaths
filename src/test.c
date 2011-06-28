@@ -200,13 +200,16 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(2);
     OK();
 
-    CHECKING(smaths_jbridge_destroy);
+    CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
     smaths_envg_destroy(&envg);
     smaths_inst_destroy(&inst);
     smaths_sine_destroy(&sine);
     r = smaths_jbridge_destroy(&bridge);
-    CHECK_R();
-    OK();
+    if(r != 0) {
+	error(0, errno, "Error");
+    } else {
+	OK();
+    }
 
     return 0;
 }

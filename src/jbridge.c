@@ -132,11 +132,8 @@ int smaths_jbridge_init(struct smaths_jbridge *self, const char *client_name, ja
 
 int smaths_jbridge_destroy(struct smaths_jbridge *self) {
     int r = jack_client_close(self->client);
-    if(r != 0) {
-	return r;
-    }
     smaths_graph_destroy(&self->graph);
-    return 0;
+    return r;
 }
 
 int smaths_jbridge_create_socket(struct smaths_jbridge *self, enum gln_socket_direction direction, struct gln_socket **out_socket, jack_port_t **out_port) {
