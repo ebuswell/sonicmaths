@@ -17,10 +17,8 @@
 # along with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
 
 MAINTAINERCLEANFILES = aclocal.m4 config.guess config.sub configure depcomp install-sh ltmain.sh Makefile.in missing src/config.h.in~
-EXTRA_DIST = autogen.sh Doxyfile src/falling_saw.h src/parabola.h src/util.h src/sonicmaths/main.dxg
+EXTRA_DIST = autogen.sh Doxyfile
 AUTOMAKE_OPTIONS = foreign
-
-SUBDIRS = $(PYTHON_SUBDIR)
 
 lib_LTLIBRARIES = libsonicmaths.la
 libsonicmaths_la_SOURCES = src/jbridge.c src/graph.c src/parameter.c src/synth.c src/sine.c src/envelope-generator.c src/controller.c src/instrument.c
