@@ -26,6 +26,8 @@
 #include <sonicmaths/parameter.h>
 #include <sonicmaths/instrument.h>
 #include <sonicmaths/envelope-generator.h>
+#include <sonicmaths/clock.h>
+#include <sonicmaths/scheduler.h>
 #include <graphline.h>
 #include <string.h>
 #include <errno.h>
@@ -72,6 +74,26 @@
 
 /*     return 0; */
 /* } */
+
+int play_first(struct smaths_inst *inst) {
+    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f));
+    return 0;
+}
+
+int play_second(struct smaths_inst *inst) {
+    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f * powf(2.0f, 4.0f/12.0f)));
+    return 0;
+}
+
+int play_third(struct smaths_inst *inst) {
+    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f * powf(2.0f, 7.0f/12.0f)));
+    return 0;
+}
+
+int stop_it(struct smaths_inst *inst) {
+    smaths_inst_stop(inst);
+    return 0;
+}
 
 int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
     int r;
@@ -200,7 +222,57 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(2);
     OK();
 
+    CHECKING(smaths_clock_init);
+    struct smaths_clock clock;
+    r = smaths_clock_init(&clock, &bridge.graph);
+    CHECK_R();
+    smaths_parameter_set(&clock.rate, smaths_graph_normalized_rate(&bridge.graph, 144.0f/60.0f));
+    OK();
+
+    CHECKING(smaths_sched_init);
+    struct smaths_sched sched;
+    r = smaths_sched_init(&sched, &bridge.graph);
+    CHECK_R();
+    OK();
+
+    CHECKING(smaths_sched_schedule);
+    struct smaths_sched_event first_event = { 1.0f, (smaths_event_fp_t) play_first, &inst };
+    struct smaths_sched_event second_event = { 2.0f, (smaths_event_fp_t) play_second, &inst };
+    struct smaths_sched_event third_event = { 3.0f, (smaths_event_fp_t) play_third, &inst };
+    struct smaths_sched_event stop_event = { 3.85f, (smaths_event_fp_t) stop_it, &inst };
+    r = smaths_sched_schedule(&sched, &stop_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &first_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &third_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &second_event);
+    CHECK_R();
+    r = gln_socket_connect(&sched.clock, &clock.clock);
+    CHECK_R();
+    sleep(4.9 * 60.0/144.0);
+    OK();
+
+    CHECKING(smaths_sched_cancel);
+    first_event.time = 5.0f;
+    second_event.time = 6.0f;
+    third_event.time = 7.0f;
+    stop_event.time = 7.85f;
+    r = smaths_sched_schedule(&sched, &stop_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &first_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &third_event);
+    CHECK_R();
+    r = smaths_sched_schedule(&sched, &second_event);
+    CHECK_R();
+    smaths_sched_cancel(&sched, &third_event);
+    sleep(5);
+    OK();
+
     CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
+    smaths_clock_destroy(&clock);
+    smaths_sched_destroy(&sched);
     smaths_envg_destroy(&envg);
     smaths_inst_destroy(&inst);
     smaths_sine_destroy(&sine);

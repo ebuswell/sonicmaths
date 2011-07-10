@@ -17,90 +17,98 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-static int smaths_sched_process(void *arg) {
-    struct smaths_sched *self = (struct smaths_sched *) arg;
-    atomic_prioq_lock(&sched->schedule);
-    float *clock_buffer = gln_socket_get_buffer(self->clock);
-    struct smaths_sched_event *event = nonatomic_prioq_peek(&sched->schedule);
-    if(event == NULL) {
-	goto no_more_events;
+#include <sonicmaths/scheduler.h>
+#include <sonicmaths/graph.h>
+#include <graphline.h>
+#include <atomickit/atomic-list.h>
+#include <math.h>
+
+static int event_compar(struct smaths_sched_event *a, struct smaths_sched_event *b) {
+    if(isnanf(a->time)) {
+	if(isnanf(b->time)) {
+	    return 0;
+	} else {
+	    return 1;
+	}
+    } else if(isnanf(b->time)) {
+	return -1;
     }
-    for(self->offset = 0; self->offset < self->node->graph->buffer_size / sizeof(float); self->offset++) {
-	if(event.time <= clock_buffer[self->offset]) {
-	    nonatomic_prioq_poll(&sched->schedule);
+    float res = a->time - b->time;
+    return res == 0.0f ? 0
+	: res < 0.0f ? -1
+	: 1;
+}
+
+static int smaths_sched_process(struct smaths_sched *self) {
+    float *clock_buffer = gln_socket_get_buffer(&self->clock);
+    struct smaths_sched_event *event = atomic_list_first(&self->schedule);
+    if(event == ALST_EMPTY) {
+	return 0;
+    }
+    size_t offset;
+    for(offset = 0; offset < self->graph->graph.buffer_nmemb; offset++) {
+	if(event->time <= clock_buffer[offset]) {
+	    struct smaths_sched_event *event2 = atomic_list_shift(&self->schedule);
+	    if(event2 != event) {
+		/* replace and loop */
+		event = event2;
+		atomic_list_insert_sorted(&self->schedule, (int(*)(void*,void*)) event_compar, event);
+		offset--;
+		continue;
+	    }
 	    int r = event->event_fp(event->arg);
 	    if(r != 0) {
 		return r;
 	    }
-	    event = nonatomic_prioq_peek(&sched->schedule);
-	    if(event == NULL) {
-		goto no_more_events;
+	    event = atomic_list_first(&self->schedule);
+	    if(event == ALST_EMPTY) {
+		return 0;
 	    }
 	}
     }
-no_more_events:
-    self->offset = -1;
-    atomic_prioq_unlock(&sched->schedule);
     return 0;
 }
 
-int smaths_sched_schedule(struct smaths_sched *sched, float time, smaths_event_fp_t event_fp, void *arg) {
-    struct smaths_sched_event *event = malloc(sizeof(struct smaths_sched_event));
-    if(event == NULL) {
-	return -1;
-    }
-    event->time = time;
-    event->event_fp = event_fp;
-    event->arg = arg;
-
-    return atomic_prioq_add(&shed->schedule, event);
+int smaths_sched_schedule(struct smaths_sched *self, struct smaths_sched_event *event) {
+    return atomic_list_insert_sorted(&self->schedule, (int(*)(void*,void*))event_compar, event);
 }
 
-static int smaths_sched_event_compare(void *arg1, void *arg2) {
-    struct smaths_sched_event *a = (struct smaths_sched_event *) arg1;
-    struct smaths_sched_event *b = (struct smaths_sched_event *) arg2;
-    
-    return a->time < b->time ? -1 : a->time == b->time ? 0 : 1;
+void smaths_sched_cancel(struct smaths_sched *self, struct smaths_sched_event *event) {
+    atomic_list_remove_by_value(&self->schedule, event);
 }
 
-struct smaths_sched *smaths_sched_create(struct gln_graph *graph) {
-    struct smaths_sched *self = malloc(sizeof(struct smaths_sched));
-    if(self == NULL) {
-	return NULL;
-    }
-
-    self->offset = -1;
-    int r = atomic_prioq_init(&self->schedule, smaths_sched_event_compare);
-    if(r != 0) {
-	free(self);
-	return NULL;
-    }
-    self->node = gln_create_node(graph, smaths_sched_process, self);
-    if(self->node == NULL) {
-	atomic_prioq_destroy(&self->schedule);
-	free(self);
-	return NULL;
-    }
-    self->clock = gln_create_socket(self->node, INPUT);
-    if(self->clock == NULL) {
-	atomic_prioq_destroy(&self->schedule);
-	gln_destroy_node(graph, self->node);
-	free(self);
-	return NULL;
-    }
-    return self;
-}
-
-int smaths_sched_destroy(struct smaths_sched *self) {
+int smaths_sched_init(struct smaths_sched *self, struct smaths_graph *graph) {
+    self->graph = graph;
     int r;
-    r = gln_destroy_node(graph, self->node);
+    r = atomic_list_init(&self->schedule);
     if(r != 0) {
 	return r;
     }
-    r = atomic_prioq_destroy(&self->schedule);
+    r = gln_node_init(&self->node, &self->graph->graph, (gln_process_fp_t) smaths_sched_process, self);
     if(r != 0) {
+	atomic_list_destroy(&self->schedule);
 	return r;
     }
-    free(self);
+    r = gln_socket_init(&self->clock, &self->node, INPUT);
+    if(r != 0) {
+	gln_node_destroy(&self->node);
+	atomic_list_destroy(&self->schedule);
+	return r;
+    }
+    self->process_closure.func = (smaths_graph_process_fp_t) smaths_sched_process;
+    self->process_closure.arg = self;
+    r = atomic_list_push(&self->graph->run_first, &self->process_closure);
+    if(r != 0) {
+	gln_socket_destroy(&self->clock);
+	gln_node_destroy(&self->node);
+	atomic_list_destroy(&self->schedule);
+    }
     return 0;
+}
+
+void smaths_sched_destroy(struct smaths_sched *self) {
+    atomic_list_remove_by_value(&self->graph->run_first, &self->process_closure);
+    gln_socket_destroy(&self->clock);
+    gln_node_destroy(&self->node);
+    atomic_list_destroy(&self->schedule);
 }

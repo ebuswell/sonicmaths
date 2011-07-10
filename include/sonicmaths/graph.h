@@ -59,6 +59,8 @@ static inline float smaths_graph_normalized_frequency(struct smaths_graph *graph
     return f / graph->sample_rate;
 }
 
+#define smaths_graph_normalized_rate(x, y) smaths_graph_normalized_frequency((x), (y))
+
 static inline float smaths_graph_normalized_time(struct smaths_graph *graph, float t) {
     return t * graph->sample_rate;
 }

@@ -21,12 +21,12 @@ EXTRA_DIST = autogen.sh Doxyfile
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = libsonicmaths.la
-libsonicmaths_la_SOURCES = src/jbridge.c src/graph.c src/parameter.c src/synth.c src/sine.c src/envelope-generator.c src/controller.c src/instrument.c
+libsonicmaths_la_SOURCES = src/jbridge.c src/graph.c src/parameter.c src/synth.c src/sine.c src/envelope-generator.c src/controller.c src/instrument.c src/scheduler.c src/clock.c
 libsonicmaths_la_LIBADD = $(JACK_LIBS) $(SNDFILE_LIBS) $(ATOMICKIT_LIBS) $(GRAPHLINE_LIBS)
 libsonicmaths_la_LDFLAGS = $(LDFLAGS) -L$(libdir) -export-dynamic -version_info @VERSION_INFO@
 libsonicmaths_la_CFLAGS = $(CFLAGS) $(JACK_CFLAGS) $(SNDFILE_CFLAGS) $(ATOMICKIT_CFLAGS) $(GRAPHLINE_CFLAGS) -Wall -Wextra -Iinclude
 libsonicmathsincludedir = $(pkgincludedir)
-libsonicmathsinclude_HEADERS = include/sonicmaths/jbridge.h include/sonicmaths/graph.h include/sonicmaths/parameter.h include/sonicmaths/synth.h include/sonicmaths/sine.h include/sonicmaths/envelope-generator.h include/sonicmaths/controller.h include/sonicmaths/instrument.h
+libsonicmathsinclude_HEADERS = include/sonicmaths/jbridge.h include/sonicmaths/graph.h include/sonicmaths/parameter.h include/sonicmaths/synth.h include/sonicmaths/sine.h include/sonicmaths/envelope-generator.h include/sonicmaths/controller.h include/sonicmaths/instrument.h include/sonicmaths/scheduler.h include/sonicmaths/clock.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = sonicmaths.pc
