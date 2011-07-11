@@ -28,6 +28,7 @@
 #include <sonicmaths/envelope-generator.h>
 #include <sonicmaths/clock.h>
 #include <sonicmaths/scheduler.h>
+#include <sonicmaths/key.h>
 #include <graphline.h>
 #include <string.h>
 #include <errno.h>
@@ -76,17 +77,17 @@
 /* } */
 
 int play_first(struct smaths_inst *inst) {
-    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f));
+    smaths_inst_play(inst, 0.0f);
     return 0;
 }
 
 int play_second(struct smaths_inst *inst) {
-    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f * powf(2.0f, 4.0f/12.0f)));
+    smaths_inst_play(inst, 2.0f);
     return 0;
 }
 
 int play_third(struct smaths_inst *inst) {
-    smaths_inst_play(inst, smaths_graph_normalized_frequency(inst->ctlr.graph, 440.0f * powf(2.0f, 7.0f/12.0f)));
+    smaths_inst_play(inst, 4.0f);
     return 0;
 }
 
@@ -214,12 +215,48 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
 
     CHECKING(smaths_inst_play);
     smaths_inst_play(&inst, smaths_graph_normalized_frequency(&bridge.graph, 880.0f));
-    sleep(2);
+    sleep(1);
     OK();
 
     CHECKING(smaths_inst_stop);
     smaths_inst_stop(&inst);
-    sleep(2);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_key_init);
+    struct smaths_key key;
+    r = smaths_key_init(&key, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&key.note, &inst.ctlr.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&sine.freq, &key.freq);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 1.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_key_set_tuning);
+    r = smaths_key_set_tuning(&key, SMATHS_MAJOR_TUNING);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 1.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_key_note2freq);
+    smaths_parameter_set(&sine.freq, smaths_key_note2freq(&key, 2.0f));
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    smaths_parameter_connect(&sine.freq, &key.freq);
     OK();
 
     CHECKING(smaths_clock_init);
@@ -250,14 +287,14 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     r = gln_socket_connect(&sched.clock, &clock.clock);
     CHECK_R();
-    sleep(4.9 * 60.0/144.0);
+    sleep(5.0 * 60.0/144.0);
     OK();
 
     CHECKING(smaths_sched_cancel);
-    first_event.time = 5.0f;
-    second_event.time = 6.0f;
-    third_event.time = 7.0f;
-    stop_event.time = 7.85f;
+    first_event.time = 6.0f;
+    second_event.time = 7.0f;
+    third_event.time = 8.0f;
+    stop_event.time = 8.85f;
     r = smaths_sched_schedule(&sched, &stop_event);
     CHECK_R();
     r = smaths_sched_schedule(&sched, &first_event);
