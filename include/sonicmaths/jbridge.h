@@ -29,6 +29,7 @@
 #include <graphline.h>
 #include <atomickit/atomic-list.h>
 #include <sonicmaths/graph.h>
+#include <atomickit/atomic-types.h>
 
 /**
  * Bridge to JACK
@@ -36,11 +37,18 @@
 struct smaths_jbridge {
     struct smaths_graph graph;
     jack_client_t *client;
+    atomic_t portnum;
+    atomic_list_t untied_ports;
 };
 
 struct smaths_jbridge_socketpair {
     struct gln_socket socket;
     jack_port_t *port;
+};
+
+struct smaths_jbridge_untied_port {
+    JackProcessCallback cb;
+    void *arg;
 };
 
 /**

@@ -27,6 +27,7 @@
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /* called via graphline */
 static int smaths_jbridge_process_from_jack(struct smaths_jbridge *self) {
@@ -66,11 +67,27 @@ static int smaths_jbridge_process_to_jack(jack_nframes_t nframes, struct smaths_
 	}
     }
 
+    /* prefill all untied ports */
+    struct smaths_jbridge_untied_port *p;
+    atomic_iterator_t i;
     int r;
+    r = atomic_iterator_init(&self->untied_ports, &i);
+    if(r != 0) {
+	return r;
+    }
+    while((p = atomic_iterator_next(&self->untied_ports, &i)) != ALST_EMPTY) {
+	r = p->cb(nframes, p->arg);
+	if(r != 0) {
+	    atomic_iterator_destroy(&self->untied_ports, &i);
+	    return r;
+	}
+    }
+    atomic_iterator_destroy(&self->untied_ports, &i);
+
+
     r = smaths_graph_process(&self->graph);
 
     struct smaths_jbridge_socketpair *s;
-    atomic_iterator_t i;
     r = atomic_iterator_init(&self->graph.to_outside_sockets, &i);
     if(r != 0) {
 	return r;
@@ -96,6 +113,7 @@ static int smaths_jbridge_process_to_jack(jack_nframes_t nframes, struct smaths_
 
 int smaths_jbridge_init(struct smaths_jbridge *self, const char *client_name, jack_options_t flags, jack_status_t *status, char *server_name) {
     *status = JackFailure;
+    atomic_set(&self->portnum, 0);
 
     if(server_name == NULL) {
 	self->client = jack_client_open(client_name, flags, status);
@@ -120,8 +138,16 @@ int smaths_jbridge_init(struct smaths_jbridge *self, const char *client_name, ja
 	return r;
     }
 
+    r = atomic_list_init(&self->untied_ports);
+    if(r != 0) {
+	jack_client_close(self->client);
+	smaths_graph_destroy(&self->graph);
+	return r;
+    }
+
     r = jack_activate(self->client);
     if(r != 0) {
+	atomic_list_destroy(&self->untied_ports);
 	jack_client_close(self->client);
 	smaths_graph_destroy(&self->graph);
 	return r;
@@ -133,6 +159,7 @@ int smaths_jbridge_init(struct smaths_jbridge *self, const char *client_name, ja
 int smaths_jbridge_destroy(struct smaths_jbridge *self) {
     int r = jack_client_close(self->client);
     smaths_graph_destroy(&self->graph);
+    atomic_list_destroy(&self->untied_ports);
     return r;
 }
 
@@ -146,7 +173,13 @@ int smaths_jbridge_create_socket(struct smaths_jbridge *self, enum gln_socket_di
 
     if(direction == INPUT) {
         /* from jack */
-	s->port = jack_port_register(self->client, "in", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0); 
+	char *tmpnam = alloca(24);
+	r = snprintf(tmpnam, 24, "%d-in", atomic_inc_return(&self->portnum));
+	if(r < 0) {
+	    return r;
+	}
+
+	s->port = jack_port_register(self->client, tmpnam, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0); 
 	if(s->port == NULL) {
 	    return -1;
 	}
@@ -165,7 +198,13 @@ int smaths_jbridge_create_socket(struct smaths_jbridge *self, enum gln_socket_di
 	}
     } else {
         /* to jack */
-	s->port = jack_port_register(self->client, "out", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0); 
+	char *tmpnam = alloca(25);
+	r = snprintf(tmpnam, 25, "%d-out", atomic_inc_return(&self->portnum));
+	if(r < 0) {
+	    return r;
+	}
+
+	s->port = jack_port_register(self->client, tmpnam, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0); 
 	if(s->port == NULL) {
 	    return -1;
 	}

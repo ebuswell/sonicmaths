@@ -33,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sonicmaths/jmidi.h>
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -304,10 +305,39 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     r = smaths_sched_schedule(&sched, &second_event);
     CHECK_R();
     smaths_sched_cancel(&sched, &third_event);
-    sleep(5);
+    sleep(7);
     OK();
 
+    CHECKING(smaths_jmidi_init);
+    struct smaths_jmidi jmidi;
+    r = smaths_jmidi_init(&jmidi, &bridge, 0);
+    CHECK_R();
+    r = smaths_parameter_connect(&envg.attack_a, &jmidi.vel);
+    CHECK_R();
+    r = smaths_parameter_connect(&envg.sustain_a, &jmidi.vel);
+    CHECK_R();
+    smaths_parameter_set(&envg.decay_t, 0.0f);
+    r = smaths_parameter_connect(&key.note, &jmidi.note);
+    CHECK_R();
+    r = gln_socket_connect(&envg.ctl, &jmidi.ctl);
+    CHECK_R();
+    r = smaths_key_set_tuning(&key, SMATHS_EQUAL_TUNING);
+    CHECK_R();
+    OK();
+
+    struct smaths_sine sine2;
+    r = smaths_sine_init(&sine2, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&sine2.freq, &key.freq);
+    CHECK_R();
+    r = smaths_parameter_connect(&sine.phase, &sine2.out);
+    CHECK_R();
+
+    printf("Press enter to continue...");
+    getchar();
+
     CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
+    smaths_jmidi_destroy(&jmidi);
     smaths_clock_destroy(&clock);
     smaths_sched_destroy(&sched);
     smaths_envg_destroy(&envg);
