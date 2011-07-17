@@ -34,6 +34,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sonicmaths/jmidi.h>
+#include <sonicmaths/mixer.h>
+#include <sonicmaths/noise.h>
+#include <atomickit/atomic.h>
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -206,7 +209,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     smaths_parameter_set(&envg.attack_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
     smaths_parameter_set(&envg.decay_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
-    smaths_parameter_set(&envg.sustain_a, 0.65f);
+    smaths_parameter_set(&envg.sustain_a, expf(-0.5f));
     smaths_parameter_set(&envg.release_t, smaths_graph_normalized_time(&bridge.graph, 1.0f));
     r = smaths_parameter_connect(&sine.amp, &envg.out);
     CHECK_R();
@@ -305,7 +308,103 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     r = smaths_sched_schedule(&sched, &second_event);
     CHECK_R();
     smaths_sched_cancel(&sched, &third_event);
-    sleep(7);
+    sleep(6);
+    OK();
+
+    CHECKING_S("Building another instrument");
+    gln_socket_disconnect(&sine.out);
+    struct smaths_sine sine2;
+    r = smaths_sine_init(&sine2, &bridge.graph);
+    CHECK_R();
+    struct smaths_inst inst2;
+    r = smaths_inst_init(&inst2, &bridge.graph);
+    CHECK_R();
+    struct smaths_key key2;
+    r = smaths_key_init(&key2, &bridge.graph);
+    CHECK_R();
+    struct smaths_envg envg2;
+    r = smaths_envg_init(&envg2, &bridge.graph);
+    CHECK_R();
+    r = smaths_key_set_tuning(&key2, SMATHS_MAJOR_TUNING);
+    CHECK_R();
+    smaths_parameter_set(&envg2.attack_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
+    smaths_parameter_set(&envg2.decay_t, smaths_graph_normalized_time(&bridge.graph, 0.5f));
+    smaths_parameter_set(&envg2.sustain_a, expf(-0.5f));
+    smaths_parameter_set(&envg2.release_t, smaths_graph_normalized_time(&bridge.graph, 1.0f));
+    r = smaths_parameter_connect(&sine2.freq, &key2.freq);
+    CHECK_R();
+    r = smaths_parameter_connect(&sine2.amp, &envg2.out);
+    CHECK_R();
+    r = gln_socket_connect(&envg2.ctl, &inst2.ctlr.ctl);
+    CHECK_R();
+    r = smaths_parameter_connect(&key2.note, &inst2.ctlr.out);
+    CHECK_R();
+    r = gln_socket_connect(&sine2.out, to_jack_socket);
+    CHECK_R();
+    smaths_inst_play(&inst2, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst2);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_mix_init);
+    struct smaths_mix mix;
+    r = smaths_mix_init(&mix, &bridge.graph);
+    CHECK_R();
+    r = gln_socket_connect(&mix.out, to_jack_socket);
+    CHECK_R();
+    OK();
+
+    CHECKING(smaths_mix_input_init);
+    struct smaths_parameter mix_in1;
+    struct smaths_parameter mix_in1_amp;
+    r = smaths_mix_input_init(&mix, &mix_in1, &mix_in1_amp);
+    CHECK_R();
+    struct smaths_parameter mix_in2;
+    struct smaths_parameter mix_in2_amp;
+    r = smaths_mix_input_init(&mix, &mix_in2, &mix_in2_amp);
+    CHECK_R();
+    smaths_parameter_set(&mix_in1_amp, 0.75f);
+    smaths_parameter_set(&mix_in2_amp, 0.75f);
+    r = smaths_parameter_connect(&mix_in1, &sine.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in2, &sine2.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst2, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    smaths_inst_stop(&inst2);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_mix_input_destroy);
+    // smaths_parameter_set(&mix_in1, 0.0f);
+    smaths_parameter_set(&mix_in2, 0.0f);
+    // smaths_mix_input_destroy(&mix, &mix_in1, &mix_in1_amp);
+    smaths_mix_input_destroy(&mix, &mix_in2, &mix_in2_amp);
+    OK();
+
+    CHECKING(smaths_noise_init);
+    struct smaths_noise noise;
+    r = smaths_noise_init(&noise, &bridge.graph);
+    CHECK_R();
+    OK();
+
+    CHECKING_S("smaths_noise: white");
+    r = smaths_parameter_connect(&mix_in1, &noise.out);
+    CHECK_R();
+    atomic_set(&noise.kind, SMATHS_WHITE);
+    sleep(1);
+    OK();
+
+    CHECKING_S("smaths_noise: pink");
+    atomic_set(&noise.kind, SMATHS_PINK);
+    sleep(1);
+    r = smaths_parameter_connect(&mix_in1, &sine.out);
+    CHECK_R();
     OK();
 
     CHECKING(smaths_jmidi_init);
@@ -325,24 +424,28 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     OK();
 
-    struct smaths_sine sine2;
-    r = smaths_sine_init(&sine2, &bridge.graph);
+    struct smaths_sine sine3;
+    r = smaths_sine_init(&sine3, &bridge.graph);
     CHECK_R();
-    r = smaths_parameter_connect(&sine2.freq, &key.freq);
+    r = smaths_parameter_connect(&sine3.freq, &key.freq);
     CHECK_R();
-    r = smaths_parameter_connect(&sine.phase, &sine2.out);
+    r = smaths_parameter_connect(&sine.phase, &sine3.out);
     CHECK_R();
 
     printf("Press enter to continue...");
     getchar();
 
     CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
+    smaths_noise_destroy(&noise);
+    smaths_mix_destroy(&mix);
     smaths_jmidi_destroy(&jmidi);
     smaths_clock_destroy(&clock);
     smaths_sched_destroy(&sched);
     smaths_envg_destroy(&envg);
     smaths_inst_destroy(&inst);
     smaths_sine_destroy(&sine);
+    smaths_sine_destroy(&sine2);
+    smaths_sine_destroy(&sine3);
     r = smaths_jbridge_destroy(&bridge);
     if(r != 0) {
 	error(0, errno, "Error");
