@@ -364,8 +364,8 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     struct smaths_parameter mix_in2_amp;
     r = smaths_mix_input_init(&mix, &mix_in2, &mix_in2_amp);
     CHECK_R();
-    smaths_parameter_set(&mix_in1_amp, 0.75f);
-    smaths_parameter_set(&mix_in2_amp, 0.75f);
+    smaths_parameter_set(&mix_in1_amp, 0.5f);
+    smaths_parameter_set(&mix_in2_amp, 0.5f);
     r = smaths_parameter_connect(&mix_in1, &sine.out);
     CHECK_R();
     r = smaths_parameter_connect(&mix_in2, &sine2.out);
