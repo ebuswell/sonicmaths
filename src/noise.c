@@ -105,6 +105,7 @@ int smaths_noise_init(struct smaths_noise *self, struct smaths_graph *graph) {
     self->state[0] = 0.0;
     self->state[1] = 0.0;
     self->state[2] = 0.0;
+    atomic_set(&self->kind, SMATHS_WHITE);
     srandom((unsigned int) time(NULL));
 
     r = gln_node_init(&self->node, &graph->graph, (gln_process_fp_t) smaths_noise_process, self);

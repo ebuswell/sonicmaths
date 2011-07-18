@@ -37,6 +37,7 @@
 #include <sonicmaths/mixer.h>
 #include <sonicmaths/noise.h>
 #include <atomickit/atomic.h>
+#include <sonicmaths/distortion.h>
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -311,7 +312,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(6);
     OK();
 
-    CHECKING_S("Building another instrument");
+    printf("Building another instrument...");
     gln_socket_disconnect(&sine.out);
     struct smaths_sine sine2;
     r = smaths_sine_init(&sine2, &bridge.graph);
@@ -407,6 +408,60 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     OK();
 
+    CHECKING(smaths_distort_init);
+    struct smaths_distort distort;
+    r = smaths_distort_init(&distort, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &distort.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&distort.filter.in, &sine.out);
+    CHECK_R();
+    smaths_parameter_set(&distort.gain, expf(1.5f));
+    OK();
+
+    CHECKING_S("smaths_distort: exponential");
+    atomic_set(&distort.kind, SMATHS_EXP);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 4.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING_S("smaths_distort: hyperbolic");
+    atomic_set(&distort.kind, SMATHS_HYP);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 4.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING_S("smaths_distort: arctangent");
+    atomic_set(&distort.kind, SMATHS_ATAN);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 4.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING_S("smaths_distort: tube simulation");
+    atomic_set(&distort.kind, SMATHS_TUBE);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 4.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    r = smaths_parameter_connect(&mix_in1, &sine.out);
+    CHECK_R();
+
     CHECKING(smaths_jmidi_init);
     struct smaths_jmidi jmidi;
     r = smaths_jmidi_init(&jmidi, &bridge, 0);
@@ -432,8 +487,15 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     r = smaths_parameter_connect(&sine.phase, &sine3.out);
     CHECK_R();
 
-    printf("Press enter to continue...");
-    getchar();
+    CHECKING_S("presence of system:midi_capture_1");
+    r = jack_connect(bridge.client, "system:midi_capture_1", jack_port_name(jmidi.midi_port));
+    if(r == 0) {
+	printf("found\nPausing to allow midi test, press enter to continue...");
+	getchar();
+	OK();
+    } else {
+	printf("midi not found or error with jack_connect\n");
+    }
 
     CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
     smaths_noise_destroy(&noise);
