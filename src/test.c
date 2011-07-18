@@ -38,6 +38,7 @@
 #include <sonicmaths/noise.h>
 #include <atomickit/atomic.h>
 #include <sonicmaths/distortion.h>
+#include <sonicmaths/impulse-train.h>
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -454,6 +455,24 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     smaths_inst_play(&inst, 0.0f);
     sleep(1);
     smaths_inst_play(&inst, 4.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_itrain_init);
+    struct smaths_itrain itrain;
+    r = smaths_itrain_init(&itrain, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &itrain.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&itrain.synth.amp, &envg.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&itrain.synth.freq, &key.freq);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
     sleep(1);
     smaths_inst_stop(&inst);
     sleep(1);
