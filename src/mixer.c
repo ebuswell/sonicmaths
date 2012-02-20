@@ -19,12 +19,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <sonicmaths/mixer.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/graph.h>
-#include <graphline.h>
-#include <atomickit/atomic-list.h>
 #include <alloca.h>
+#include <atomickit/atomic-list.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/mixer.h"
 
 static int smaths_mix_process(struct smaths_mix *self) {
     size_t num_in;

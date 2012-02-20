@@ -1,29 +1,29 @@
 /*
  * distortion.c
  * 
- * Copyright 2010 Evan Buswell
+ * Copyright 2012 Evan Buswell
  * 
- * This file is part of Cshellsynth.
+ * This file is part of Sonic Maths.
  * 
- * Cshellsynth is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Sonic Maths is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, version 2.
  * 
- * Cshellsynth is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Sonic Maths is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with Cshellsynth.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Sonic Maths.  If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
-#include <sonicmaths/distortion.h>
-#include <sonicmaths/filter.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <math.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/filter.h"
+#include "sonicmaths/distortion.h"
 
 static int smaths_distort_process(struct smaths_distort *self) {
     float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);

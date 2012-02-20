@@ -18,15 +18,15 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <jack/jack.h>
-#include <jack/midiport.h>
-#include <graphline.h>
-#include <sonicmaths/jmidi.h>
-#include <sonicmaths/graph.h>
 #include <alloca.h>
 #include <stdio.h>
-#include <atomickit/atomic-list.h>
+#include <jack/jack.h>
+#include <jack/midiport.h>
 #include <atomickit/atomic.h>
+#include <atomickit/atomic-list.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/jmidi.h"
 
 static int smaths_jmidi_process_from_jack(jack_nframes_t nframes, struct smaths_jmidi *self) {
     void *midi_buffer = jack_port_get_buffer(self->midi_port, nframes);

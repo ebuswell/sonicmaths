@@ -21,8 +21,8 @@
  */
 #include <math.h>
 #include "sonicmaths/math.h"
-#include "sonicmaths/synth.h"
 #include "sonicmaths/parameter.h"
+#include "sonicmaths/synth.h"
 
 int smaths_synth_init(struct smaths_synth *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
     self->graph = graph;

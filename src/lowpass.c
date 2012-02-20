@@ -18,13 +18,13 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <sonicmaths/lowpass.h>
-#include <sonicmaths/filter.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
+#include <math.h>
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
-#include <math.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/filter.h"
+#include "sonicmaths/lowpass.h"
 
 static int smaths_lowpass_process(struct smaths_lowpass *self) {
     float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
@@ -66,9 +66,9 @@ static int smaths_lowpass_process(struct smaths_lowpass *self) {
 	self->x1 = x;
 	self->y2 = self->y1;
 	if(y == INFINITY) {
-	    self->y1 = 1.0;
+	    self->y1 = 1.0f;
 	} else if (y == -INFINITY) {
-	    self->y1 = -1.0;
+	    self->y1 = -1.0f;
 	} else {
 	    self->y1 = y;
 	}

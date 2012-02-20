@@ -20,25 +20,32 @@
  */
 #include <stdio.h>
 #include <error.h>
-#include <sonicmaths/jbridge.h>
-#include <sonicmaths/sine.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/instrument.h>
-#include <sonicmaths/envelope-generator.h>
-#include <sonicmaths/clock.h>
-#include <sonicmaths/scheduler.h>
-#include <sonicmaths/key.h>
-#include <graphline.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sonicmaths/jmidi.h>
-#include <sonicmaths/mixer.h>
-#include <sonicmaths/noise.h>
 #include <atomickit/atomic.h>
-#include <sonicmaths/distortion.h>
-#include <sonicmaths/impulse-train.h>
+#include <graphline.h>
+#include "sonicmaths/jbridge.h"
+#include "sonicmaths/sine.h"
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/instrument.h"
+#include "sonicmaths/envelope-generator.h"
+#include "sonicmaths/clock.h"
+#include "sonicmaths/scheduler.h"
+#include "sonicmaths/key.h"
+#include "sonicmaths/jmidi.h"
+#include "sonicmaths/mixer.h"
+#include "sonicmaths/noise.h"
+#include "sonicmaths/distortion.h"
+#include "sonicmaths/impulse-train.h"
+#include "sonicmaths/integrator.h"
+#include "sonicmaths/portamento.h"
+#include "sonicmaths/lowpass.h"
+#include "sonicmaths/bandpass.h"
+#include "sonicmaths/highpass.h"
+#include "sonicmaths/notch.h"
+#include "sonicmaths/dsf.h"
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -165,6 +172,10 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     r = jack_connect(bridge.client, jack_port_name(to_jack_port), "system:playback_2");
     CHECK_R();
     OK();
+
+    /* printf("Pausing to allow jack configuration, press enter to continue..."); */
+    /* getchar(); */
+    /* OK(); */
 
     /* CHECKING_S("nullnode creation and hook up"); */
     /* struct nullnode nn; */
@@ -460,6 +471,25 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(1);
     OK();
 
+    CHECKING(smaths_dsf_init);
+    struct smaths_dsf dsf;
+    r = smaths_dsf_init(&dsf, &bridge.graph);
+    CHECK_R();
+    smaths_parameter_set(&dsf.bright, 0.8f);
+    r = smaths_parameter_connect(&mix_in1, &dsf.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&dsf.synth.amp, &envg.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&dsf.synth.freq, &key.freq);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
     CHECKING(smaths_itrain_init);
     struct smaths_itrain itrain;
     r = smaths_itrain_init(&itrain, &bridge.graph);
@@ -477,6 +507,148 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     smaths_inst_stop(&inst);
     sleep(1);
     OK();
+
+    CHECKING(smaths_integrator_init);
+    struct smaths_integrator integrator;
+    r = smaths_integrator_init(&integrator, &bridge.graph);
+    CHECK_R();
+    OK();
+
+    CHECKING_S("smaths_integrator: one pass");
+    r = smaths_parameter_connect(&mix_in1, &integrator.filter.out);
+    CHECK_R();
+    smaths_parameter_set(&mix_in1_amp, 0.25f);
+    r = smaths_parameter_connect(&integrator.filter.in, &itrain.synth.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING_S("smaths_integrator: two pass");
+    struct smaths_integrator intgr2;
+    r = smaths_integrator_init(&intgr2, &bridge.graph);
+    CHECK_R();
+    smaths_parameter_set(&mix_in1_amp, 0.0625f);
+    r = smaths_parameter_connect(&integrator.filter.in, &intgr2.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&intgr2.filter.in, &itrain.synth.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+
+    CHECKING(smaths_porta_init);
+    struct smaths_porta porta;
+    r = smaths_porta_init(&porta, &bridge.graph);
+    CHECK_R();
+    smaths_parameter_set(&porta.lag, 44100.0f);
+    smaths_parameter_set(&mix_in1_amp, 0.25f);
+    r = smaths_parameter_connect(&integrator.filter.in, &itrain.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&porta.filter.in, &inst.ctlr.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&key.note, &porta.filter.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_lowpass_init);
+    struct smaths_lowpass lowpass;
+    r = smaths_lowpass_init(&lowpass, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&key.note, &inst.ctlr.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&lowpass.freq, &porta.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &lowpass.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&lowpass.filter.in, &integrator.filter.out);
+    CHECK_R();
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_bandpass_init);
+    struct smaths_bandpass bandpass;
+    r = smaths_bandpass_init(&bandpass, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&bandpass.lowpass.freq, &porta.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &bandpass.lowpass.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&bandpass.lowpass.filter.in, &integrator.filter.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_highpass_init);
+    struct smaths_highpass highpass;
+    r = smaths_highpass_init(&highpass, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&highpass.lowpass.freq, &porta.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &highpass.lowpass.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&highpass.lowpass.filter.in, &integrator.filter.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_notch_init);
+    struct smaths_notch notch;
+    r = smaths_notch_init(&notch, &bridge.graph);
+    CHECK_R();
+    r = smaths_parameter_connect(&notch.lowpass.freq, &porta.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&mix_in1, &notch.lowpass.filter.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&notch.lowpass.filter.in, &integrator.filter.out);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    // modu??
+
+    smaths_parameter_set(&mix_in1_amp, 0.5f);
 
     r = smaths_parameter_connect(&mix_in1, &sine.out);
     CHECK_R();
@@ -517,13 +689,27 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     }
 
     CHECKING_S("smaths_jbridge_destroy\n\t(expected to fail if jack server is not run seperately)");
+    smaths_notch_destroy(&notch);
+    smaths_highpass_destroy(&highpass);
+    smaths_bandpass_destroy(&bandpass);
+    smaths_lowpass_destroy(&lowpass);
+    smaths_porta_destroy(&porta);
+    smaths_integrator_destroy(&intgr2);
+    smaths_integrator_destroy(&integrator);
+    smaths_distort_destroy(&distort);
+    smaths_itrain_destroy(&itrain);
+    smaths_dsf_destroy(&dsf);
     smaths_noise_destroy(&noise);
     smaths_mix_destroy(&mix);
     smaths_jmidi_destroy(&jmidi);
     smaths_clock_destroy(&clock);
     smaths_sched_destroy(&sched);
+    smaths_key_destroy(&key);
+    smaths_key_destroy(&key2);
     smaths_envg_destroy(&envg);
+    smaths_envg_destroy(&envg2);
     smaths_inst_destroy(&inst);
+    smaths_inst_destroy(&inst2);
     smaths_sine_destroy(&sine);
     smaths_sine_destroy(&sine2);
     smaths_sine_destroy(&sine3);

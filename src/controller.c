@@ -19,9 +19,9 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include "sonicmaths/controller.h"
-#include "sonicmaths/graph.h"
 #include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/controller.h"
 
 int smaths_ctlr_init(struct smaths_ctlr *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
     int r;

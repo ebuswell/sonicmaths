@@ -22,11 +22,11 @@
 
 #include <stdbool.h>
 #include <math.h>
-#include <sonicmaths/envelope-generator.h>
-#include <graphline.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <atomickit/atomic.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/envelope-generator.h"
 
 static inline float smaths_envg_process_stage(bool linear, float from, float to, float last, double time) {
     if(linear) {

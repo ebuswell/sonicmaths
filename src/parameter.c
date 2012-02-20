@@ -17,9 +17,9 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include "sonicmaths/parameter.h"
-#include <graphline.h>
 #include <math.h>
+#include <graphline.h>
+#include "sonicmaths/parameter.h"
 
 int smaths_parameter_init(struct smaths_parameter *p, struct gln_node *node, float value) {
     int r;

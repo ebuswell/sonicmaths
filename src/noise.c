@@ -18,12 +18,12 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <sonicmaths/noise.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <graphline.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/noise.h"
 
 const float A[] = { 0.02109238, 0.07113478, 0.68873558 }; // rescaled by (1+P)/(1-P)
 const float P[] = { 0.3190,  0.7756,  0.9613  };

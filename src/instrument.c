@@ -20,10 +20,10 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include <math.h>
-#include "sonicmaths/instrument.h"
-#include "sonicmaths/controller.h"
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
+#include "sonicmaths/controller.h"
+#include "sonicmaths/instrument.h"
 
 static int smaths_inst_process(struct smaths_inst *self) {
     float *out_buffer = gln_socket_get_buffer(&self->ctlr.out);

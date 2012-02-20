@@ -19,9 +19,9 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <sonicmaths/filter.h>
-#include <sonicmaths/parameter.h>
 #include <graphline.h>
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/filter.h"
 
 int smaths_filter_init(struct smaths_filter *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
     int r;

@@ -18,13 +18,13 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <sonicmaths/impulse-train.h>
-#include <sonicmaths/synth.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <graphline.h>
-#include <atomickit/atomic.h>
 #include <math.h>
+#include <atomickit/atomic.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/synth.h"
+#include "sonicmaths/impulse-train.h"
 #include "util.h"
 
 static int smaths_itrain_process(struct smaths_itrain *self) {

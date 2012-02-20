@@ -20,9 +20,9 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include <math.h>
-#include "sonicmaths/sine.h"
-#include "sonicmaths/synth.h"
 #include "sonicmaths/parameter.h"
+#include "sonicmaths/synth.h"
+#include "sonicmaths/sine.h"
 
 static int smaths_sine_process(struct smaths_sine *self) {
     float *freq_buffer = smaths_parameter_get_buffer(&self->freq);

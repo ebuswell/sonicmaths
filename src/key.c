@@ -20,13 +20,13 @@
  */
 
 #include <stddef.h>
-#include <graphline.h>
-#include <sonicmaths/key.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
+#include <string.h>
 #include <atomickit/atomic-float.h>
 #include <atomickit/spinlock.h>
-#include <string.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/key.h"
 
 static const struct {
     size_t tuning_length;

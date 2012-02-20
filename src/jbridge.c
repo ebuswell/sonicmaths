@@ -18,16 +18,16 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <jack/jack.h>
-#include <pthread.h>
-#include <graphline.h>
-#include <sonicmaths/jbridge.h>
-#include <sonicmaths/graph.h>
 #include <stdint.h>
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
+#include <jack/jack.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/jbridge.h"
 
 /* called via graphline */
 static int smaths_jbridge_process_from_jack(struct smaths_jbridge *self) {

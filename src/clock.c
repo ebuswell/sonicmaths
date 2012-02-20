@@ -18,10 +18,10 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <sonicmaths/clock.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/graph.h>
 #include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/parameter.h"
+#include "sonicmaths/clock.h"
 
 static int smaths_clock_process(struct smaths_clock *self) {
     float *clock_buffer = gln_socket_get_buffer(&self->clock);

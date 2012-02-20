@@ -17,11 +17,11 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <sonicmaths/scheduler.h>
-#include <sonicmaths/graph.h>
-#include <graphline.h>
-#include <atomickit/atomic-list.h>
 #include <math.h>
+#include <atomickit/atomic-list.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
+#include "sonicmaths/scheduler.h"
 
 static int event_compar(struct smaths_sched_event *a, struct smaths_sched_event *b) {
     if(isnanf(a->time)) {
