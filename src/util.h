@@ -3,21 +3,25 @@
  * 
  * Copyright 2010 Evan Buswell
  * 
- * This file is part of Cshellsynth.
+ * This file is part of Sonic Maths.
  * 
- * Cshellsynth is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Sonic Maths is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, either version 2 of the License,
+ * or (at your option) any later version.
  * 
- * Cshellsynth is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Sonic Maths is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with Cshellsynth.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Sonic Maths.  If not, see
+ * <http://www.gnu.org/licenses/>.
  */
+
+/* Should this file maybe be absorbed into sonicmaths/math.h? */
+
 #ifndef UTIL_H
 #define UTIL_H 1
 
@@ -35,4 +39,4 @@
 /* scale x to an attenuation exponential scale, where x is scaled according to a frequency exponential scale */
 #define F2ESCALE(x) L2ESCALE(F2LSCALE(x))
 
-#endif /* #ifndef UTIL_H */
+#endif /* ! UTIL_H */

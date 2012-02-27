@@ -81,6 +81,9 @@ static int smaths_dsf_process(struct smaths_dsf *self) {
 		} else {
 		    out = (sinf(wt) - powf(m,n) * (sinf((n + 1.0) * wt) - m * sinf(n * wt)))
 			/ (1.0f + m*m - 2.0f*m*cosf(wt));
+		    /* This should really switch to the other method
+		       see itrain.c
+		     */
 		    if(na < 1.0f) {
 			out -= (1.0f - L2ESCALE(na))*powf(m,n)*sinf(n * wt);
 		    }
@@ -92,6 +95,9 @@ static int smaths_dsf_process(struct smaths_dsf *self) {
 		} else {
 		    out = (sinf(wt) - powf(m,n) * (sinf((n + 1.0) * wt) - m * sinf(n * wt)))
 			/ (1.0f + m*m - 2.0f*m*cosf(wt));
+		    /* This should really switch to the other method
+		       see itrain.c
+		     */
 		    if(na < 1.0f) {
 			out -= (1.0f - L2ESCALE(na)) * powf(m,n) * sinf(n * wt);
 		    }

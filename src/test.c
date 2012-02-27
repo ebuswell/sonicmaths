@@ -551,8 +551,8 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     r = smaths_porta_init(&porta, &bridge.graph);
     CHECK_R();
     smaths_parameter_set(&porta.lag, 44100.0f);
-    smaths_parameter_set(&mix_in1_amp, 0.25f);
-    r = smaths_parameter_connect(&integrator.filter.in, &itrain.synth.out);
+    smaths_parameter_set(&mix_in1_amp, 0.5f);
+    r = smaths_parameter_connect(&mix_in1, &itrain.synth.out);
     CHECK_R();
     r = smaths_parameter_connect(&porta.filter.in, &inst.ctlr.out);
     CHECK_R();
@@ -576,7 +576,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     r = smaths_parameter_connect(&mix_in1, &lowpass.filter.out);
     CHECK_R();
-    r = smaths_parameter_connect(&lowpass.filter.in, &integrator.filter.out);
+    r = smaths_parameter_connect(&lowpass.filter.in, &itrain.synth.out);
     CHECK_R();
     smaths_parameter_set(&porta.filter.in, 0.0f);
     sleep(1);
@@ -597,7 +597,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     r = smaths_parameter_connect(&mix_in1, &bandpass.lowpass.filter.out);
     CHECK_R();
-    r = smaths_parameter_connect(&bandpass.lowpass.filter.in, &integrator.filter.out);
+    r = smaths_parameter_connect(&bandpass.lowpass.filter.in, &itrain.synth.out);
     CHECK_R();
     smaths_inst_play(&inst, 0.0f);
     smaths_parameter_set(&porta.filter.in, 0.5f);
@@ -616,7 +616,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     r = smaths_parameter_connect(&mix_in1, &highpass.lowpass.filter.out);
     CHECK_R();
-    r = smaths_parameter_connect(&highpass.lowpass.filter.in, &integrator.filter.out);
+    r = smaths_parameter_connect(&highpass.lowpass.filter.in, &itrain.synth.out);
     CHECK_R();
     smaths_inst_play(&inst, 0.0f);
     smaths_parameter_set(&porta.filter.in, 0.5f);
@@ -635,7 +635,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     CHECK_R();
     r = smaths_parameter_connect(&mix_in1, &notch.lowpass.filter.out);
     CHECK_R();
-    r = smaths_parameter_connect(&notch.lowpass.filter.in, &integrator.filter.out);
+    r = smaths_parameter_connect(&notch.lowpass.filter.in, &itrain.synth.out);
     CHECK_R();
     smaths_inst_play(&inst, 0.0f);
     smaths_parameter_set(&porta.filter.in, 0.5f);
