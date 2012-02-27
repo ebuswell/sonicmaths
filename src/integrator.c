@@ -19,19 +19,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include <math.h>
+#include <string.h>
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
 #include "sonicmaths/graph.h"
 #include "sonicmaths/filter.h"
 #include "sonicmaths/integrator.h"
-
-/* Values for the integral of a windowed sinc function.7 samples wide */
-#define WSINC_0 0.851781806f
-#define WSINC_1 0.0887156468f
-#define WSINC_2 -0.0167572966f
-#define WSINC_3 0.00215077831f
-
-#define LEAKINESS 0.995f
 
 static int smaths_integrator_process(struct smaths_integrator *self) {
     float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
@@ -45,27 +38,7 @@ static int smaths_integrator_process(struct smaths_integrator *self) {
 
     size_t i;
     for(i = 0; i < self->filter.graph->graph.buffer_nmemb; i++) {
-	float x = in_buffer[i];
-	float y = self->y1 * LEAKINESS
-	    + ((x + self->x6) * WSINC_3
-	       + (self->x1 + self->x5) * WSINC_2
-	       + (self->x2 + self->x4) * WSINC_1
-	       + self->x3 * WSINC_0);
-
-	self->x6 = self->x5;
-	self->x5 = self->x4;
-	self->x4 = self->x3;
-	self->x3 = self->x2;
-	self->x2 = self->x1;
-	self->x1 = x;
-	if(y == INFINITY) {
-	    self->y1 = 1.0;
-	} else if (y == -INFINITY) {
-	    self->y1 = -1.0;
-	} else {
-	    self->y1 = y;
-	}
-	out_buffer[i] = y;
+	out_buffer[i] = smaths_do_integral(&self->intg_matrix, in_buffer[i]);
     }
     return 0;
 }
@@ -76,13 +49,7 @@ int smaths_integrator_init(struct smaths_integrator *integrator, struct smaths_g
     if(r != 0) {
 	return r;
     }
-    integrator->y1 = 0;
-    integrator->x1 = 0;
-    integrator->x2 = 0;
-    integrator->x3 = 0;
-    integrator->x4 = 0;
-    integrator->x5 = 0;
-    integrator->x6 = 0;
+    memset(&integrator->intg_matrix, 0, sizeof(struct smaths_intg_matrix));
 
     return 0;
 }
