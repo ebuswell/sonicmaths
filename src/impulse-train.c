@@ -27,9 +27,6 @@
 #include "sonicmaths/impulse-train.h"
 #include "util.h"
 
-#define M_MNTS 9634303.96f
-#define M_MNTS_NSQR 0.000322173509f
-
 static int smaths_itrain_process(struct smaths_itrain *self) {
     float *freq_buffer = smaths_parameter_get_buffer(&self->synth.freq);
     if(freq_buffer == NULL) {
@@ -62,19 +59,7 @@ static int smaths_itrain_process(struct smaths_itrain *self) {
 	    if(self->synth.t >= 1.0) {
 		self->synth.t -= 1.0;
 	    }
-	    float n = floorf(1.0f / (2.0f * f)); /* the number of harmonics */
-	    float wt_2 = M_PI * (self->synth.t + phase_buffer[i]); /* half angular frequency */
-	    float m_f = powf(M_MNTS, f);
-	    float out = sinf(n * wt_2) * cosf((n + 1.0f) * wt_2)
-		/ sinf(wt_2);
-	    /* adjust top harmonics such that new harmonics gradually rise from 0 */
-	    out -= m_f * M_MNTS_NSQR
-		* (cosf(2.0f * wt_2)
-		   - powf(m_f, n) * cosf((n + 1.0f) * 2.0f * wt_2)
-		   + powf(m_f, n + 1) * cosf(n * 2.0f * wt_2)
-		   - m_f
-		    )
-		/ (1.0f + m_f * m_f - 2.0f * m_f * cosf(2.0f * wt_2));
+	    float out = smaths_itrain_do(f, self->synth.t + phase_buffer[i]);
 
 	    if(scale) {
 		out *= 2.0 * f;
