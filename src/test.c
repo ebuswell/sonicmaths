@@ -47,6 +47,7 @@
 #include "sonicmaths/notch.h"
 #include "sonicmaths/dsf.h"
 #include "sonicmaths/sawtooth.h"
+#include "sonicmaths/parabola.h"
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -510,6 +511,25 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(1);
     OK();
 
+    CHECKING(smaths_bola_init);
+    struct smaths_bola bola;
+    r = smaths_bola_init(&bola, &bridge.graph);
+    CHECK_R();
+    atomic_set(&bola.scale, 1);
+    r = smaths_parameter_connect(&mix_in1, &bola.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&bola.synth.amp, &envg.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&bola.synth.freq, &key.freq);
+    CHECK_R();
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
     CHECKING(smaths_itrain_init);
     struct smaths_itrain itrain;
     r = smaths_itrain_init(&itrain, &bridge.graph);
@@ -721,6 +741,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     smaths_itrain_destroy(&itrain);
     smaths_dsf_destroy(&dsf);
     smaths_saw_destroy(&saw);
+    smaths_bola_destroy(&bola);
     smaths_noise_destroy(&noise);
     smaths_mix_destroy(&mix);
     smaths_jmidi_destroy(&jmidi);
