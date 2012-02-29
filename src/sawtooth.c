@@ -1,5 +1,5 @@
 /*
- * impulse_train.c
+ * sawtooth.c
  * 
  * Copyright 2011 Evan Buswell
  * 
@@ -19,15 +19,21 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include <math.h>
+#include <string.h>
 #include <atomickit/atomic.h>
 #include <graphline.h>
 #include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
 #include "sonicmaths/synth.h"
 #include "sonicmaths/impulse-train.h"
+#include "sonicmaths/sawtooth.h"
 #include "util.h"
 
-static int smaths_itrain_process(struct smaths_itrain *self) {
+#define SAW_SCALE_A 1.851937052f
+#define SAW_SCALE_B 1.570830481f
+#define SAW_SCALE_C 0.8438339747f
+
+static int smaths_saw_process(struct smaths_saw *self) {
     float *freq_buffer = smaths_parameter_get_buffer(&self->synth.freq);
     if(freq_buffer == NULL) {
 	return -1;
@@ -61,8 +67,12 @@ static int smaths_itrain_process(struct smaths_itrain *self) {
 	    }
 	    float out = smaths_itrain_do(f, self->synth.t + phase_buffer[i]);
 
+	    out = smaths_do_integral(&self->intg_matrix, out);
+	    out *= 2.0f * M_PI * f;
+
 	    if(scale) {
-		out *= 2.0 * f;
+		out /= SAW_SCALE_A - SAW_SCALE_B
+		                   / (1 / (2.0f * f) + SAW_SCALE_C);
 	    }
 
 	    out_buffer[i] = out * amp_buffer[i] + offset_buffer[i];
@@ -72,7 +82,8 @@ static int smaths_itrain_process(struct smaths_itrain *self) {
     return 0;
 }
 
-int smaths_itrain_init(struct smaths_itrain *self, struct smaths_graph *graph) {
+int smaths_saw_init(struct smaths_saw *self, struct smaths_graph *graph) {
     atomic_set(&self->scale, 0);
-    return smaths_synth_init(&self->synth, graph, (gln_process_fp_t) smaths_itrain_process, self);
+    memset(&self->intg_matrix, 0, sizeof(struct smaths_intg_matrix));
+    return smaths_synth_init(&self->synth, graph, (gln_process_fp_t) smaths_saw_process, self);
 }
