@@ -48,6 +48,8 @@
 #include "sonicmaths/dsf.h"
 #include "sonicmaths/sawtooth.h"
 #include "sonicmaths/parabola.h"
+#include "sonicmaths/square.h"
+#include "sonicmaths/triangle.h"
 
 #define CHECKING(function)			\
     printf("Checking " #function "...")
@@ -687,6 +689,72 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     sleep(1);
     OK();
 
+    CHECKING(smaths_square_init);
+    struct smaths_square square;
+    r = smaths_square_init(&square, &bridge.graph);
+    CHECK_R();
+    atomic_set(&square.scale, 1);
+    r = smaths_parameter_connect(&mix_in1, &square.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&square.synth.amp, &envg.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&square.synth.freq, &key.freq);
+    CHECK_R();
+    r = smaths_parameter_connect(&square.skew, &porta.filter.out);
+    CHECK_R();
+    smaths_parameter_set(&porta.lag, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    smaths_parameter_set(&porta.lag, 44100.0f);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 1.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    smaths_parameter_set(&porta.lag, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    smaths_parameter_set(&porta.lag, 44100.0f);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
+    CHECKING(smaths_triangle_init);
+    struct smaths_triangle triangle;
+    r = smaths_triangle_init(&triangle, &bridge.graph);
+    CHECK_R();
+    atomic_set(&triangle.scale, 1);
+    r = smaths_parameter_connect(&mix_in1, &triangle.synth.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&triangle.synth.amp, &envg.out);
+    CHECK_R();
+    r = smaths_parameter_connect(&triangle.synth.freq, &key.freq);
+    CHECK_R();
+    r = smaths_parameter_connect(&triangle.skew, &porta.filter.out);
+    CHECK_R();
+    smaths_parameter_set(&porta.lag, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    smaths_parameter_set(&porta.lag, 44100.0f);
+    smaths_inst_play(&inst, 0.0f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 1.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    smaths_parameter_set(&porta.lag, 0.0f);
+    smaths_parameter_set(&porta.filter.in, 0.5f);
+    smaths_parameter_set(&porta.lag, 44100.0f);
+    smaths_inst_play(&inst, 2.0f);
+    sleep(1);
+    smaths_parameter_set(&porta.filter.in, 0.0f);
+    sleep(1);
+    smaths_inst_stop(&inst);
+    sleep(1);
+    OK();
+
     // modu??
 
     smaths_parameter_set(&mix_in1_amp, 0.5f);
@@ -742,6 +810,8 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     smaths_dsf_destroy(&dsf);
     smaths_saw_destroy(&saw);
     smaths_bola_destroy(&bola);
+    smaths_square_destroy(&square);
+    smaths_triangle_destroy(&triangle);
     smaths_noise_destroy(&noise);
     smaths_mix_destroy(&mix);
     smaths_jmidi_destroy(&jmidi);
