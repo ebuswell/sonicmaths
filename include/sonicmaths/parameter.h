@@ -24,9 +24,9 @@
 #ifndef SONICMATHS_PARAMETER_H
 #define SONICMATHS_PARAMETER_H 1
 
+#include <math.h>
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
-#include <math.h>
 
 /**
  * A parameter which may be either static or dynamic

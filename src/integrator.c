@@ -27,33 +27,29 @@
 #include "sonicmaths/integrator.h"
 
 static int smaths_integrator_process(struct smaths_integrator *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
 
     size_t i;
-    for(i = 0; i < self->filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	out_buffer[i] = smaths_do_integral(&self->intg_matrix, in_buffer[i]);
     }
     return 0;
 }
 
-int smaths_integrator_init(struct smaths_integrator *integrator, struct smaths_graph *graph) {
+int smaths_integrator_init(struct smaths_integrator *self, struct smaths_graph *graph) {
     int r;
-    r = smaths_filter_init(&integrator->filter, graph, (gln_process_fp_t) smaths_integrator_process, integrator);
+    r = smaths_filter_init((struct smaths_filter *) self, graph, (gln_process_fp_t) smaths_integrator_process, self);
     if(r != 0) {
 	return r;
     }
-    memset(&integrator->intg_matrix, 0, sizeof(struct smaths_intg_matrix));
+    memset(&self->intg_matrix, 0, sizeof(struct smaths_intg_matrix));
 
     return 0;
-}
-
-void smaths_integrator_destroy(struct smaths_integrator *integrator) {
-    smaths_filter_destroy(&integrator->filter);
 }

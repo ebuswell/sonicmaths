@@ -6,7 +6,7 @@
  *
  * @verbatim
 inf
- Σ cos(n*wt)
+ Σ cos(nwt)
 n=1
 @endverbatim
  *
@@ -37,9 +37,11 @@ n=1
 #define SONICMATHS_IMPULSE_TRAIN_H 1
 
 #include <math.h>
-#include <sonicmaths/synth.h>
-#include <sonicmaths/graph.h>
 #include <atomickit/atomic-types.h>
+#include <graphline.h>
+#include <sonicmaths/graph.h>
+#include <sonicmaths/parameter.h>
+#include <sonicmaths/synth.h>
 
 /**
  * Impulse Train Synth
@@ -47,7 +49,14 @@ n=1
  * See @ref struct smaths_synth
  */
 struct smaths_itrain {
-    struct smaths_synth synth;
+    struct smaths_graph *graph; /** Graph for this synth */
+    struct gln_node node; /** Node for this synth */
+    struct gln_socket out; /** Output socket */
+    struct smaths_parameter freq; /** Frequency divided by sample rate */
+    struct smaths_parameter amp; /** Amplitude */
+    struct smaths_parameter phase; /** Offset of the cycle from zero */
+    struct smaths_parameter offset; /** Offset of the amplitude from zero */
+    double t; /** Current time offset of the wave */
     atomic_t scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
@@ -63,7 +72,7 @@ struct smaths_itrain {
  * See @ref smaths_synth_destroy
  */
 static inline void smaths_itrain_destroy(struct smaths_itrain *itrain) {
-    smaths_synth_destroy(&itrain->synth);
+    smaths_synth_destroy((struct smaths_synth *) itrain);
 }
 
 /**
@@ -86,7 +95,7 @@ static inline float smaths_itrain_do(float f, float t) {
     out -= m_f * M_MNTS_NSQR
 	* (cosf(2.0f * wt_2)
 	   - powf(m_f, n) * cosf((n + 1.0f) * 2.0f * wt_2)
-	   + powf(m_f, n + 1) * cosf(n * 2.0f * wt_2)
+	   + powf(m_f, n + 1.0f) * cosf(n * 2.0f * wt_2)
 	   - m_f
 	    )
 	/ (1.0f + m_f * m_f - 2.0f * m_f * cosf(2.0f * wt_2));

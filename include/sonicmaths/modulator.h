@@ -47,8 +47,6 @@ void smaths_modu_destroy(struct smaths_modu *modu);
 
 /**
  * Initialize modulator
- *
- * See @ref cs_mix_init
  */
 int smaths_modu_init(struct smaths_modu *modu, struct smaths_graph *graph);
 

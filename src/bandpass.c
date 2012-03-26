@@ -28,24 +28,24 @@
 #include "sonicmaths/bandpass.h"
 
 static int smaths_bandpass_process(struct smaths_bandpass *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->lowpass.filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
-    float *freq_buffer = smaths_parameter_get_buffer(&self->lowpass.freq);
+    float *freq_buffer = smaths_parameter_get_buffer(&self->freq);
     if(freq_buffer == NULL) {
 	return -1;
     }
-    float *Q_buffer = smaths_parameter_get_buffer(&self->lowpass.Q);
+    float *Q_buffer = smaths_parameter_get_buffer(&self->Q);
     if(Q_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->lowpass.filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     size_t i;
-    for(i = 0; i < self->lowpass.filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	float f = freq_buffer[i];
 	if(f > 0.5f) {
 	    f = 0.5f;
@@ -54,24 +54,24 @@ static int smaths_bandpass_process(struct smaths_bandpass *self) {
 	float w = 2.0 * M_PI * f;
 	float Q = Q_buffer[i];
 	float a = sinf(w)/(2 * Q);
-	float y = (a/(1.0f + a)) * x - (a/(1.0f + a)) * self->lowpass.x2
-	    + (2*cos(w)/(1.0f + a)) * self->lowpass.y1 - ((1.0f - a)/(1.0f + a)) * self->lowpass.y2;
+	float y = (a/(1.0f + a)) * x - (a/(1.0f + a)) * self->x2
+	    + (2*cos(w)/(1.0f + a)) * self->y1 - ((1.0f - a)/(1.0f + a)) * self->y2;
 
-	self->lowpass.x2 = self->lowpass.x1;
-	self->lowpass.x1 = x;
-	self->lowpass.y2 = self->lowpass.y1;
+	self->x2 = self->x1;
+	self->x1 = x;
+	self->y2 = self->y1;
 	if(y == INFINITY) {
-	    self->lowpass.y1 = 1.0f;
+	    self->y1 = 1.0f;
 	} else if (y == -INFINITY) {
-	    self->lowpass.y1 = -1.0f;
+	    self->y1 = -1.0f;
 	} else {
-	    self->lowpass.y1 = y;
+	    self->y1 = y;
 	}
 	out_buffer[i] = y;
     }
     return 0;
 }
 
-int smaths_bandpass_init(struct smaths_bandpass *bandpass, struct smaths_graph *graph) {
-    return smaths_lowpass_subclass_init(&bandpass->lowpass, graph, (gln_process_fp_t) smaths_bandpass_process, bandpass);
+int smaths_bandpass_init(struct smaths_bandpass *self, struct smaths_graph *graph) {
+    return smaths_lowpass_subclass_init((struct smaths_lowpass *) self, graph, (gln_process_fp_t) smaths_bandpass_process, self);
 }

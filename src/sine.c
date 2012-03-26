@@ -62,5 +62,5 @@ static int smaths_sine_process(struct smaths_sine *self) {
 }
 
 int smaths_sine_init(struct smaths_sine *self, struct smaths_graph *graph) {
-    return smaths_synth_init(self, graph, (gln_process_fp_t) smaths_sine_process, self);
+    return smaths_synth_init((struct smaths_synth *) self, graph, (gln_process_fp_t) smaths_sine_process, self);
 }

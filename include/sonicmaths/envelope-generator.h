@@ -25,7 +25,7 @@ release_a                   release_a
  *
  * Also, note that by setting the appropriate parameters you can invert the envelope or do
  * many other nonstandard things useful in controlling filters.  The predictable way that
- * a linear envelope interacts with Lin2Exp (@ref lin2exp.h) is important for certain effects.
+ * a linear envelope interacts with lin2exp (@ref lin2exp.h) is important for certain effects.
  *
  * The attack and decay cycle are always performed.  A control signal to release during
  * this time will cause the release to happen immediately after the decay.  Conversely, a
@@ -59,10 +59,10 @@ release_a                   release_a
 #define SONICMATHS_ENVELOPE_GENERATOR_H 1
 
 #include <stdbool.h>
-#include <atomickit/atomic.h>
+#include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <graphline.h>
 
 /**
  * Envelope Generator State

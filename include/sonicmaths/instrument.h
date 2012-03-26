@@ -2,7 +2,8 @@
  *
  * Instrument
  *
- * A simple "instrument" interface, to use your quick typing skills to play notes.  Mostly useful to test things out.
+ * A simple "instrument" interface, to use your quick typing skills to
+ * play notes.  Mostly useful to test things out.
  */
 /*
  * Copyright 2011 Evan Buswell
@@ -25,7 +26,8 @@
 #ifndef SONICMATHS_INSTRUMENT_H
 #define SONICMATHS_INSTRUMENT_H 1
 
-#include <atomickit/atomic-float.h>
+#include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/controller.h>
 #include <sonicmaths/graph.h>
 
@@ -35,9 +37,12 @@
  * See @ref struct smaths_ctlr
  */
 struct smaths_inst {
-    struct smaths_ctlr ctlr;
-    atomic_float_t value; /** The current output value */
-    atomic_float_t ctl; /** The current control value */
+    struct smaths_graph *graph; /** Graph for this controller */
+    struct gln_node node; /** Node for this controller */
+    struct gln_socket out; /** Output */
+    struct gln_socket ctl; /** Output control */
+    atomic_float_t out_v; /** The current output value */
+    atomic_float_t ctl_v; /** The current control value */
 };
 
 /**
@@ -45,7 +50,9 @@ struct smaths_inst {
  *
  * See @ref smaths_ctlr_destroy
  */
-void smaths_inst_destroy(struct smaths_inst *inst);
+static inline void smaths_inst_destroy(struct smaths_inst *inst) {
+    smaths_ctlr_destroy((struct smaths_ctlr *) inst);
+}
 
 /**
  * Initialize instrument
@@ -60,15 +67,15 @@ int smaths_inst_init(struct smaths_inst *inst, struct smaths_graph *graph);
  * @param value the note to play.
  */
 static inline void smaths_inst_play(struct smaths_inst *self, float value) {
-    atomic_float_set(&self->value, value);
-    atomic_float_set(&self->ctl, 1.0f);
+    atomic_float_set(&self->out_v, value);
+    atomic_float_set(&self->ctl_v, 1.0f);
 }
 
 /**
  * Stop playing
  */
 static inline void smaths_inst_stop(struct smaths_inst *self) {
-    atomic_float_set(&self->ctl, -1.0f);
+    atomic_float_set(&self->ctl_v, -1.0f);
 }
 
 #endif /* ! SONICMATHS_INSTRUMENT_H */

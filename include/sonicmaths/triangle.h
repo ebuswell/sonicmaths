@@ -5,9 +5,11 @@
  * This produces a triangle wave, which corresponds to:
  *
  * @verbatim
+
 inf   cos(nwt) - cos(nw(t + skew))
- Σ  - ------------2---------------
-n=1              n
+ Σ  - ----------------------------
+n=1                2
+                  n
 @endverbatim
  *
  * When @c skew is 0.5, the default, this produces a true triangle
@@ -44,8 +46,9 @@ n=1              n
 #define SONICMATHS_TRIANGLE_H 1
 
 #include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/synth.h>
+#include <sonicmaths/parameter.h>
 #include <sonicmaths/integrator.h>
 
 /**
@@ -54,7 +57,14 @@ n=1              n
  * See @ref struct smaths_synth
  */
 struct smaths_triangle {
-    struct smaths_synth synth;
+    struct smaths_graph *graph; /** Graph for this synth */
+    struct gln_node node; /** Node for this synth */
+    struct gln_socket out; /** Output socket */
+    struct smaths_parameter freq; /** Frequency divided by sample rate */
+    struct smaths_parameter amp; /** Amplitude */
+    struct smaths_parameter phase; /** Offset of the cycle from zero */
+    struct smaths_parameter offset; /** Offset of the amplitude from zero */
+    double t; /** Current time offset of the wave */
     atomic_t scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This

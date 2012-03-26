@@ -6,7 +6,7 @@
  *
  * @verbatim
 inf  n-1
- Σ  b    * sin(n*wt)
+ Σ  b    * sin(nwt)
 n=1
 @endverbatim
  *
@@ -37,10 +37,10 @@ n=1
 #ifndef SONICMATHS_DSF_H
 #define SONICMATHS_DSF_H 1
 
-#include <sonicmaths/synth.h>
+#include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <atomickit/atomic-types.h>
 
 /**
  * Discrete Summation Formula Synth
@@ -48,7 +48,14 @@ n=1
  * See @ref struct smaths_synth
  */
 struct smaths_dsf {
-    struct smaths_synth synth;
+    struct smaths_graph *graph; /** Graph for this synth */
+    struct gln_node node; /** Node for this synth */
+    struct gln_socket out; /** Output socket */
+    struct smaths_parameter freq; /** Frequency divided by sample rate */
+    struct smaths_parameter amp; /** Amplitude */
+    struct smaths_parameter phase; /** Offset of the cycle from zero */
+    struct smaths_parameter offset; /** Offset of the amplitude from zero */
+    double t; /** Current time offset of the wave */
     struct smaths_parameter bright;
        /** Brightness, from 0-1, see discussion at @ref dsf.h */
     atomic_t scale;

@@ -24,15 +24,15 @@
 #ifndef SONICMATHS_CONTROLLER_H
 #define SONICMATHS_CONTROLLER_H 1
 
-#include <sonicmaths/graph.h>
 #include <graphline.h>
+#include <sonicmaths/graph.h>
 
 /**
  * Controller
  */
 struct smaths_ctlr {
-    struct smaths_graph *graph;
-    struct gln_node node;
+    struct smaths_graph *graph; /** Graph for this controller */
+    struct gln_node node; /** Node for this controller */
     struct gln_socket out; /** Output */
     struct gln_socket ctl; /** Output control */
 };

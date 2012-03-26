@@ -60,7 +60,8 @@
 #ifndef SONICMATHS_DISTORTION_H
 #define SONICMATHS_DISTORTION_H 1
 
-#include <sonicmaths/filter.h>
+#include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
 
@@ -70,7 +71,10 @@
  * See @ref struct smaths_filter
  */
 struct smaths_distort {
-    struct smaths_filter filter;
+    struct smaths_graph *graph;
+    struct gln_node node;
+    struct gln_socket out; /** Output */
+    struct smaths_parameter in; /** Input */
     struct smaths_parameter gain;
     struct smaths_parameter sharpness;
     atomic_t kind;

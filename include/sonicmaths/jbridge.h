@@ -26,10 +26,10 @@
 #define SONICMATHS_JBRIDGE_H 1
 
 #include <jack/jack.h>
-#include <graphline.h>
-#include <atomickit/atomic-list.h>
-#include <sonicmaths/graph.h>
 #include <atomickit/atomic-types.h>
+#include <atomickit/atomic-list.h>
+#include <graphline.h>
+#include <sonicmaths/graph.h>
 
 /**
  * Bridge to JACK

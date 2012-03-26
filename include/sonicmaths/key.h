@@ -66,11 +66,11 @@ r * 2
 #define SONICMATHS_KEY_H 1
 
 #include <stddef.h>
+#include <atomickit/atomic-types.h>
+#include <atomickit/spinlock.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <atomickit/atomic-float.h>
-#include <atomickit/spinlock.h>
 
 /**
  * Tuning array

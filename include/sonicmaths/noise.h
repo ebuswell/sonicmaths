@@ -24,8 +24,8 @@
 #ifndef SONICMATHS_NOISE_H
 #define SONICMATHS_NOISE_H 1
 
-#include <sonicmaths/graph.h>
 #include <atomickit/atomic-types.h>
+#include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
 
 /**

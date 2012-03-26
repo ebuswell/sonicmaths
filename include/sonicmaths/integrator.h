@@ -37,7 +37,9 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
 #ifndef SONICMATHS_INTEGRATOR_H
 #define SONICMATHS_INTEGRATOR_H 1
 
+#include <graphline.h>
 #include <sonicmaths/graph.h>
+#include <sonicmaths/parameter.h>
 #include <sonicmaths/filter.h>
 
 /**
@@ -61,7 +63,10 @@ struct smaths_intg_matrix {
  * See @ref struct smaths_filter
  */
 struct smaths_integrator {
-    struct smaths_filter filter;
+    struct smaths_graph *graph;
+    struct gln_node node;
+    struct gln_socket out; /** Output */
+    struct smaths_parameter in; /** Input */
     struct smaths_intg_matrix intg_matrix;
 };
 
@@ -70,7 +75,9 @@ struct smaths_integrator {
  *
  * See @ref smaths_filter_destroy
  */
-void smaths_integrator_destroy(struct smaths_integrator *integrator);
+static inline void smaths_integrator_destroy(struct smaths_integrator *integrator) {
+    smaths_filter_destroy((struct smaths_filter *) integrator);
+}
 
 /**
  * Initialize integration filter

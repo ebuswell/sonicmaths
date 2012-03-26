@@ -5,8 +5,8 @@
  * This produces a sawtooth wave, which corresponds to:
  *
  * @verbatim
-inf sin(n*wt)
- Σ  ---------
+inf sin(nwt)
+ Σ  --------
 n=1    n
 @endverbatim
  *
@@ -37,7 +37,9 @@ n=1    n
 #define SONICMATHS_SAWTOOTH_H 1
 
 #include <atomickit/atomic-types.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
+#include <sonicmaths/parameter.h>
 #include <sonicmaths/synth.h>
 #include <sonicmaths/integrator.h>
 
@@ -47,7 +49,14 @@ n=1    n
  * See @ref struct smaths_synth
  */
 struct smaths_saw {
-    struct smaths_synth synth;
+    struct smaths_graph *graph; /** Graph for this synth */
+    struct gln_node node; /** Node for this synth */
+    struct gln_socket out; /** Output socket */
+    struct smaths_parameter freq; /** Frequency divided by sample rate */
+    struct smaths_parameter amp; /** Amplitude */
+    struct smaths_parameter phase; /** Offset of the cycle from zero */
+    struct smaths_parameter offset; /** Offset of the amplitude from zero */
+    double t; /** Current time offset of the wave */
     atomic_t scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
@@ -64,7 +73,7 @@ struct smaths_saw {
  * See @ref smaths_synth_destroy
  */
 static inline void smaths_saw_destroy(struct smaths_saw *saw) {
-    smaths_synth_destroy(&saw->synth);
+    smaths_synth_destroy((struct smaths_synth *) saw);
 }
 
 /**

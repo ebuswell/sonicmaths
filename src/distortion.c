@@ -26,7 +26,7 @@
 #include "sonicmaths/distortion.h"
 
 static int smaths_distort_process(struct smaths_distort *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
@@ -38,13 +38,13 @@ static int smaths_distort_process(struct smaths_distort *self) {
     if(sharpness_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     int kind = atomic_read(&self->kind);
     size_t i;
-    for(i = 0; i < self->filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	float in = in_buffer[i];
 	float sharpness = sharpness_buffer[i];
 	float gain = gain_buffer[i];
@@ -101,21 +101,21 @@ static int smaths_distort_process(struct smaths_distort *self) {
 
 int smaths_distort_init(struct smaths_distort *self, struct smaths_graph *graph) {
     int r;
-    r = smaths_filter_init(&self->filter, graph, (gln_process_fp_t) smaths_distort_process, self);
+    r = smaths_filter_init((struct smaths_filter *) self, graph, (gln_process_fp_t) smaths_distort_process, self);
     if(r != 0) {
 	return r;
     }
 
-    r = smaths_parameter_init(&self->gain, &self->filter.node, 1.0f);
+    r = smaths_parameter_init(&self->gain, &self->node, 1.0f);
     if(r != 0) {
-	smaths_filter_destroy(&self->filter);
+	smaths_filter_destroy((struct smaths_filter *) self);
 	return r;
     }
 
-    r = smaths_parameter_init(&self->sharpness, &self->filter.node, 2.0f);
+    r = smaths_parameter_init(&self->sharpness, &self->node, 2.0f);
     if(r != 0) {
 	smaths_parameter_destroy(&self->gain);
-	smaths_filter_destroy(&self->filter);
+	smaths_filter_destroy((struct smaths_filter *) self);
 	return r;
     }
 
@@ -127,5 +127,5 @@ int smaths_distort_init(struct smaths_distort *self, struct smaths_graph *graph)
 void smaths_distort_destroy(struct smaths_distort *self) {
     smaths_parameter_destroy(&self->sharpness);
     smaths_parameter_destroy(&self->gain);
-    smaths_filter_destroy(&self->filter);
+    smaths_filter_destroy((struct smaths_filter *) self);
 }

@@ -26,6 +26,7 @@
 #ifndef SONICMATHS_PORTAMENTO_H
 #define SONICMATHS_PORTAMENTO_H 1
 
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
 #include <sonicmaths/filter.h>
@@ -36,7 +37,10 @@
  * See @ref struct smaths_filter
  */
 struct smaths_porta {
-    struct smaths_filter filter;
+    struct smaths_graph *graph;
+    struct gln_node node;
+    struct gln_socket out; /** Output */
+    struct smaths_parameter in; /** Input */
     struct smaths_parameter lag; /** The lag, in samples */
     float start; /** The value being progressed from */
     float target; /** The value being progressed to */
@@ -48,7 +52,9 @@ struct smaths_porta {
  *
  * See @ref smaths_filter_destroy
  */
-void smaths_porta_destroy(struct smaths_porta *self);
+static inline void smaths_porta_destroy(struct smaths_porta *porta) {
+    smaths_filter_destroy((struct smaths_filter *) porta);
+}
 
 /**
  * Initialize portamento filter

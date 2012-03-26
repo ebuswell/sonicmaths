@@ -28,18 +28,18 @@
 #ifndef SONICMATHS_MIXER_H
 #define SONICMATHS_MIXER_H 1
 
+#include <atomickit/atomic-list.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <atomickit/atomic-list.h>
 #include <sonicmaths/parameter.h>
 
 /**
  * Mixer
  */
 struct smaths_mix {
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_node node;
-    struct gln_socket out;
+    struct smaths_graph *graph; /** Graph for this mixer */
+    struct gln_node node; /** Node for this mixer */
+    struct gln_socket out; /** Output */
     atomic_list_t in; /** Input parameters */
     atomic_list_t in_amp; /** Amplitude parameters */
 };

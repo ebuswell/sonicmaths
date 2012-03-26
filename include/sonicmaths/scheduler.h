@@ -25,9 +25,9 @@
 #ifndef SONICMATHS_SCHEDULER_H
 #define SONICMATHS_SCHEDULER_H 1
 
-#include <sonicmaths/graph.h>
-#include <graphline.h>
 #include <atomickit/atomic-list.h>
+#include <graphline.h>
+#include <sonicmaths/graph.h>
 
 struct smaths_sched {
     struct smaths_graph *graph; /** Graph for this scheduler */

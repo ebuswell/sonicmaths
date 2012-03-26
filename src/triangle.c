@@ -35,23 +35,23 @@
 #define TRIANGLE_SCALE_D 2.3561444022741096f
 
 static int smaths_triangle_process(struct smaths_triangle *self) {
-    float *freq_buffer = smaths_parameter_get_buffer(&self->synth.freq);
+    float *freq_buffer = smaths_parameter_get_buffer(&self->freq);
     if(freq_buffer == NULL) {
 	return -1;
     }
-    float *amp_buffer = smaths_parameter_get_buffer(&self->synth.amp);
+    float *amp_buffer = smaths_parameter_get_buffer(&self->amp);
     if(amp_buffer == NULL) {
 	return -1;
     }
-    float *phase_buffer = smaths_parameter_get_buffer(&self->synth.phase);
+    float *phase_buffer = smaths_parameter_get_buffer(&self->phase);
     if(phase_buffer == NULL) {
 	return -1;
     }
-    float *offset_buffer = smaths_parameter_get_buffer(&self->synth.offset);
+    float *offset_buffer = smaths_parameter_get_buffer(&self->offset);
     if(offset_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->synth.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
@@ -61,21 +61,21 @@ static int smaths_triangle_process(struct smaths_triangle *self) {
     }
     int scale = atomic_read(&self->scale);
     size_t i;
-    for(i = 0; i < self->synth.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	float f = freq_buffer[i];
 	if(isnanf(f)) {
-	    self->synth.t = 0.0;
+	    self->t = 0.0;
 	    out_buffer[i] = offset_buffer[i];
 	} else {
-	    if(self->synth.t >= 1.0) {
-		self->synth.t -= 1.0;
+	    if(self->t >= 1.0) {
+		self->t -= 1.0;
 	    }
 	    float skew = skew_buffer[i];
 	    while(skew > 1.0) {
 		skew -= 1.0;
 	    }
-	    float out1 = smaths_itrain_do(f, self->synth.t + phase_buffer[i]);
-	    float out2 = smaths_itrain_do(f, self->synth.t + phase_buffer[i] + skew);
+	    float out1 = smaths_itrain_do(f, self->t + phase_buffer[i]);
+	    float out2 = smaths_itrain_do(f, self->t + phase_buffer[i] + skew);
 
 	    out1 = smaths_do_integral(&self->intg11_matrix, out1);
 	    out1 = smaths_do_integral(&self->intg12_matrix, out1);
@@ -101,7 +101,7 @@ static int smaths_triangle_process(struct smaths_triangle *self) {
 	    }
 
 	    out_buffer[i] = out1 * amp_buffer[i] + offset_buffer[i];
-	    self->synth.t += f;
+	    self->t += f;
 	}
     }
     return 0;
@@ -109,13 +109,13 @@ static int smaths_triangle_process(struct smaths_triangle *self) {
 
 int smaths_triangle_init(struct smaths_triangle *self, struct smaths_graph *graph) {
     int r;
-    r = smaths_synth_init(&self->synth, graph, (gln_process_fp_t) smaths_triangle_process, self);
+    r = smaths_synth_init((struct smaths_synth *) self, graph, (gln_process_fp_t) smaths_triangle_process, self);
     if(r != 0) {
 	return r;
     }
-    r = smaths_parameter_init(&self->skew, &self->synth.node, 0.5f);
+    r = smaths_parameter_init(&self->skew, &self->node, 0.5f);
     if(r != 0) {
-	smaths_synth_destroy(&self->synth);
+	smaths_synth_destroy((struct smaths_synth *) self);
 	return r;
     }
     atomic_set(&self->scale, 0);
@@ -128,5 +128,5 @@ int smaths_triangle_init(struct smaths_triangle *self, struct smaths_graph *grap
 
 void smaths_triangle_destroy(struct smaths_triangle *self) {
     smaths_parameter_destroy(&self->skew);
-    smaths_synth_destroy(&self->synth);
+    smaths_synth_destroy((struct smaths_synth *) self);
 }

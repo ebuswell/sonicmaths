@@ -28,24 +28,24 @@
 #include "sonicmaths/notch.h"
 
 static int smaths_notch_process(struct smaths_notch *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->lowpass.filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
-    float *freq_buffer = smaths_parameter_get_buffer(&self->lowpass.freq);
+    float *freq_buffer = smaths_parameter_get_buffer(&self->freq);
     if(freq_buffer == NULL) {
 	return -1;
     }
-    float *Q_buffer = smaths_parameter_get_buffer(&self->lowpass.Q);
+    float *Q_buffer = smaths_parameter_get_buffer(&self->Q);
     if(Q_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->lowpass.filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     size_t i;
-    for(i = 0; i < self->lowpass.filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	float f = freq_buffer[i];
 	if(f > 0.4999909f) {
 	    f = 0.4999909f;
@@ -55,18 +55,18 @@ static int smaths_notch_process(struct smaths_notch *self) {
 	float Q = Q_buffer[i];
 	float a = sinf(w)/(2 * Q);
 	double cosw2 = 2*cos(w);
-	double y = x/(1.0 + a) - (cosw2/(1.0 + a)) * self->lowpass.x1 + self->lowpass.x2 / (1.0 + a)
-	    + (cosw2/(1.0 + a)) * self->lowpass.y1 - ((1 - a)/(1 + a)) * self->lowpass.y2;
+	double y = x/(1.0 + a) - (cosw2/(1.0 + a)) * self->x1 + self->x2 / (1.0 + a)
+	    + (cosw2/(1.0 + a)) * self->y1 - ((1 - a)/(1 + a)) * self->y2;
 
-	self->lowpass.x2 = self->lowpass.x1;
-	self->lowpass.x1 = x;
-	self->lowpass.y2 = self->lowpass.y1;
+	self->x2 = self->x1;
+	self->x1 = x;
+	self->y2 = self->y1;
 	if(y == INFINITY) {
-	    self->lowpass.y1 = 1.0f;
+	    self->y1 = 1.0f;
 	} else if (y == -INFINITY) {
-	    self->lowpass.y1 = -1.0f;
+	    self->y1 = -1.0f;
 	} else {
-	    self->lowpass.y1 = y;
+	    self->y1 = y;
 	}
 	out_buffer[i] = y;
     }
@@ -74,5 +74,5 @@ static int smaths_notch_process(struct smaths_notch *self) {
 }
 
 int smaths_notch_init(struct smaths_notch *notch, struct smaths_graph *graph) {
-    return smaths_lowpass_subclass_init(&notch->lowpass, graph, (gln_process_fp_t) smaths_notch_process, notch);
+    return smaths_lowpass_subclass_init((struct smaths_lowpass *) notch, graph, (gln_process_fp_t) smaths_notch_process, notch);
 }

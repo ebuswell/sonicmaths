@@ -25,7 +25,7 @@
 #include "util.h"
 
 static int smaths_dsf_process(struct smaths_dsf *self) {
-    float *freq_buffer = smaths_parameter_get_buffer(&self->synth.freq);
+    float *freq_buffer = smaths_parameter_get_buffer(&self->freq);
     if(freq_buffer == NULL) {
 	return -1;
     }
@@ -33,38 +33,38 @@ static int smaths_dsf_process(struct smaths_dsf *self) {
     if(bright_buffer == NULL) {
 	return -1;
     }
-    float *amp_buffer = smaths_parameter_get_buffer(&self->synth.amp);
+    float *amp_buffer = smaths_parameter_get_buffer(&self->amp);
     if(amp_buffer == NULL) {
 	return -1;
     }
-    float *phase_buffer = smaths_parameter_get_buffer(&self->synth.phase);
+    float *phase_buffer = smaths_parameter_get_buffer(&self->phase);
     if(phase_buffer == NULL) {
 	return -1;
     }
-    float *offset_buffer = smaths_parameter_get_buffer(&self->synth.offset);
+    float *offset_buffer = smaths_parameter_get_buffer(&self->offset);
     if(offset_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->synth.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     bool scale = (bool) atomic_read(&self->scale);
     size_t i;
-    for(i = 0; i < self->synth.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
         float f = freq_buffer[i];
 	float m = bright_buffer[i];
 	if(f == 0.0f || isnanf(f)) {
-	    self->synth.t = 0.0f;
+	    self->t = 0.0f;
 	    out_buffer[i] = offset_buffer[i];
 	} else {
-	    if(self->synth.t >= 1.0f) {
-		self->synth.t -= 1.0f;
+	    if(self->t >= 1.0f) {
+		self->t -= 1.0f;
 	    }
 	    float out;
 	    float n = floorf(1.0 / (2.0 * f));
 	    float na = (0.5 - n*f) / 0.0003;
-	    float wt = 2.0 * M_PI * (self->synth.t + phase_buffer[i]);
+	    float wt = 2.0 * M_PI * (self->t + phase_buffer[i]);
 	    if(scale) {
 		/* the reason it's different when we scale is because eventually the peak
 		 * is not visible within the sample resolution.  This value should keep
@@ -104,7 +104,7 @@ static int smaths_dsf_process(struct smaths_dsf *self) {
 		}
 	    }
 	    out_buffer[i] = out * amp_buffer[i] + offset_buffer[i];
-	    self->synth.t += f;
+	    self->t += f;
 	}
     }
     return 0;
@@ -112,13 +112,13 @@ static int smaths_dsf_process(struct smaths_dsf *self) {
 
 int smaths_dsf_init(struct smaths_dsf *self, struct smaths_graph *graph) {
     int r;
-    r = smaths_synth_init(&self->synth, graph, (gln_process_fp_t) smaths_dsf_process, self);
+    r = smaths_synth_init((struct smaths_synth *) self, graph, (gln_process_fp_t) smaths_dsf_process, self);
     if(r != 0) {
 	return r;
     }
-    r = smaths_parameter_init(&self->bright, &self->synth.node, 0.0f);
+    r = smaths_parameter_init(&self->bright, &self->node, 0.0f);
     if(r != 0) {
-	smaths_synth_destroy(&self->synth);
+	smaths_synth_destroy((struct smaths_synth *) self);
 	return r;
     }
     atomic_set(&self->scale, 1);
@@ -127,5 +127,5 @@ int smaths_dsf_init(struct smaths_dsf *self, struct smaths_graph *graph) {
 
 void smaths_dsf_destroy(struct smaths_dsf *self) {
     smaths_parameter_destroy(&self->bright);
-    smaths_synth_destroy(&self->synth);
+    smaths_synth_destroy((struct smaths_synth *) self);
 }

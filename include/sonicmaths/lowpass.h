@@ -28,11 +28,10 @@ H(s) = 1 / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_LOWPASS_H
 #define SONICMATHS_LOWPASS_H 1
 
-#include <sonicmaths/filter.h>
+#include <atomickit/atomic-float.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <atomickit/atomic-types.h>
-#include <graphline.h>
 
 /**
  * Lowpass filter
@@ -40,7 +39,10 @@ H(s) = 1 / (s^2 + s/Q + 1)
  * See @ref struct smaths_filter
  */
 struct smaths_lowpass {
-    struct smaths_filter filter;
+    struct smaths_graph *graph;
+    struct gln_node node;
+    struct gln_socket out; /** Output */
+    struct smaths_parameter in; /** Input */
     struct smaths_parameter freq; /** The corner frequency */
     struct smaths_parameter Q; /** The filter's Q */
     atomic_float_t atten; /** Attenuation, an alternative to Q */

@@ -24,9 +24,9 @@
 #ifndef SONICMATHS_CLOCK_H
 #define SONICMATHS_CLOCK_H 1
 
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <graphline.h>
 
 /**
  * Clock

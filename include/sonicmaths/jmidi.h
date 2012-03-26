@@ -26,7 +26,6 @@
 
 #include <jack/jack.h>
 #include <graphline.h>
-#include <atomickit/atomic-list.h>
 #include <sonicmaths/jbridge.h>
 
 /**

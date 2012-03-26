@@ -27,9 +27,9 @@
 #ifndef SONICMATHS_FILTER_H
 #define SONICMATHS_FILTER_H 1
 
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
-#include <graphline.h>
 
 /**
  * Generic Filter

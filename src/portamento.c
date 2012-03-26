@@ -27,7 +27,7 @@
 #include "sonicmaths/portamento.h"
 
 static int smaths_porta_process(struct smaths_porta *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
@@ -35,12 +35,12 @@ static int smaths_porta_process(struct smaths_porta *self) {
     if(lag_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     size_t i;
-    for(i = 0; i < self->filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	if(in_buffer[i] != self->target) {
 	    self->target = in_buffer[i];
 	    if(self->last == INFINITY) {
@@ -71,14 +71,14 @@ static int smaths_porta_process(struct smaths_porta *self) {
 
 int smaths_porta_init(struct smaths_porta *self, struct smaths_graph *graph) {
     int r;
-    r = smaths_filter_init(&self->filter, graph, (gln_process_fp_t) smaths_porta_process, self);
+    r = smaths_filter_init((struct smaths_filter *) self, graph, (gln_process_fp_t) smaths_porta_process, self);
     if(r != 0) {
 	return r;
     }
 
-    r = smaths_parameter_init(&self->lag, &self->filter.node, 0.0f);
+    r = smaths_parameter_init(&self->lag, &self->node, 0.0f);
     if(r != 0) {
-	smaths_filter_destroy(&self->filter);
+	smaths_filter_destroy((struct smaths_filter *) self);
 	return r;
     }
 
@@ -87,8 +87,4 @@ int smaths_porta_init(struct smaths_porta *self, struct smaths_graph *graph) {
     self->last = 0.0f;
 
     return 0;
-}
-
-void smaths_porta_destroy(struct smaths_porta *self) {
-    smaths_filter_destroy(&self->filter);
 }

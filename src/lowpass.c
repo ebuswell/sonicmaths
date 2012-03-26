@@ -27,7 +27,7 @@
 #include "sonicmaths/lowpass.h"
 
 static int smaths_lowpass_process(struct smaths_lowpass *self) {
-    float *in_buffer = smaths_parameter_get_buffer(&self->filter.in);
+    float *in_buffer = smaths_parameter_get_buffer(&self->in);
     if(in_buffer == NULL) {
 	return -1;
     }
@@ -39,12 +39,12 @@ static int smaths_lowpass_process(struct smaths_lowpass *self) {
     if(Q_buffer == NULL) {
 	return -1;
     }
-    float *out_buffer = gln_socket_get_buffer(&self->filter.out);
+    float *out_buffer = gln_socket_get_buffer(&self->out);
     if(out_buffer == NULL) {
 	return -1;
     }
     size_t i;
-    for(i = 0; i < self->filter.graph->graph.buffer_nmemb; i++) {
+    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
 	float f = freq_buffer[i];
 	if(f > 0.5f) {
 	    f = 0.5f;
@@ -79,21 +79,21 @@ static int smaths_lowpass_process(struct smaths_lowpass *self) {
 
 int smaths_lowpass_subclass_init(struct smaths_lowpass *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
     int r;
-    r = smaths_filter_init(&self->filter, graph, func, arg);
+    r = smaths_filter_init((struct smaths_filter *) self, graph, func, arg);
     if(r != 0) {
 	return r;
     }
 
-    r = smaths_parameter_init(&self->freq, &self->filter.node, 1.0f);
+    r = smaths_parameter_init(&self->freq, &self->node, 1.0f);
     if(r != 0) {
-	smaths_filter_destroy(&self->filter);
+	smaths_filter_destroy((struct smaths_filter *) self);
 	return r;
     }
 
-    r = smaths_parameter_init(&self->Q, &self->filter.node, 2.0f);
+    r = smaths_parameter_init(&self->Q, &self->node, 2.0f);
     if(r != 0) {
 	smaths_parameter_destroy(&self->freq);
-	smaths_filter_destroy(&self->filter);
+	smaths_filter_destroy((struct smaths_filter *) self);
 	return r;
     }
 
@@ -107,5 +107,5 @@ int smaths_lowpass_init(struct smaths_lowpass *lowpass, struct smaths_graph *gra
 void smaths_lowpass_destroy(struct smaths_lowpass *self) {
     smaths_parameter_destroy(&self->Q);
     smaths_parameter_destroy(&self->freq);
-    smaths_filter_destroy(&self->filter);
+    smaths_filter_destroy((struct smaths_filter *) self);
 }
