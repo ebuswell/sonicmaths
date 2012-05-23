@@ -28,7 +28,7 @@ H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_NOTCH_H
 #define SONICMATHS_NOTCH_H 1
 
-#include <atomickit/atomic-float.h>
+#include <atomickit/atomic-types.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
