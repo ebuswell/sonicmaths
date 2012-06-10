@@ -84,8 +84,8 @@ struct smaths_key_tuning {
  * Key
  */
 struct smaths_key {
-    struct smaths_graph *graph; /** Graph for this key */
     struct gln_node node; /** Node for this key */
+    struct smaths_graph *graph; /** Graph for this key */
     struct smaths_parameter note; /** Input note */
     struct smaths_parameter root; /** Root frequency, as a fraction of sample rate */
     struct gln_socket freq; /** Output frequency, as a fraction of sample rate */

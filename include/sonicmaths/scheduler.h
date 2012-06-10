@@ -30,8 +30,8 @@
 #include <sonicmaths/graph.h>
 
 struct smaths_sched {
-    struct smaths_graph *graph; /** Graph for this scheduler */
     struct gln_node node; /** Node for this scheduler */
+    struct smaths_graph *graph; /** Graph for this scheduler */
     struct gln_socket clock; /** The source for timing information */
     atomic_list_t schedule; /** Our event schedule */
     struct smaths_graph_process_closure process_closure; /** Process closure to pass to run_first */

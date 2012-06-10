@@ -35,8 +35,8 @@
  * subclass since there's no @p freq input.
  */
 struct smaths_noise {
-    struct smaths_graph *graph;
     struct gln_node node;
+    struct smaths_graph *graph;
     struct gln_socket out;
     struct smaths_parameter amp;
     struct smaths_parameter offset;

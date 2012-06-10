@@ -33,8 +33,8 @@
  * Modulator
  */
 struct smaths_modu {
-    struct smaths_graph *graph;
     struct gln_node node;
+    struct smaths_graph *graph;
     struct gln_socket out;
     struct smaths_parameter in1;
     struct smaths_parameter in2;

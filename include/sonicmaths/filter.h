@@ -35,8 +35,8 @@
  * Generic Filter
  */
 struct smaths_filter {
-    struct smaths_graph *graph;
     struct gln_node node;
+    struct smaths_graph *graph;
     struct gln_socket out; /** Output */
     struct smaths_parameter in; /** Input */
 };

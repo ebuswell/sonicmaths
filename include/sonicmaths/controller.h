@@ -31,8 +31,8 @@
  * Controller
  */
 struct smaths_ctlr {
-    struct smaths_graph *graph; /** Graph for this controller */
     struct gln_node node; /** Node for this controller */
+    struct smaths_graph *graph; /** Graph for this controller */
     struct gln_socket out; /** Output */
     struct gln_socket ctl; /** Output control */
 };

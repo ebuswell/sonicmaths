@@ -55,8 +55,8 @@ n=1             n
  * See @ref struct smaths_synth
  */
 struct smaths_square {
-    struct smaths_graph *graph; /** Graph for this synth */
     struct gln_node node; /** Node for this synth */
+    struct smaths_graph *graph; /** Graph for this synth */
     struct gln_socket out; /** Output socket */
     struct smaths_parameter freq; /** Frequency divided by sample rate */
     struct smaths_parameter amp; /** Amplitude */

@@ -47,6 +47,10 @@ static inline void smaths_parameter_set(struct smaths_parameter *p, float value)
     atomic_float_set(&p->value, value);
 }
 
+static inline float smaths_parameter_get(struct smaths_parameter *p) {
+    return atomic_float_read(&p->value);
+}
+
 static inline int smaths_parameter_connect(struct smaths_parameter *p, struct gln_socket *other) {
     int r = gln_socket_connect(&p->p_dynamic, other);
     if(r != 0) {

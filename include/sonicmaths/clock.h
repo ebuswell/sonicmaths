@@ -34,8 +34,8 @@
  * The clock outputs a timestamp for each sample.
  */
 struct smaths_clock {
-    struct smaths_graph *graph; /** Graph for this clock */
     struct gln_node node; /** Node for this clock */
+    struct smaths_graph *graph; /** Graph for this clock */
     struct gln_socket clock; /** Output clock port */
     struct smaths_parameter rate; /** Rate at which this clock progresses */
     double current; /** The current value */

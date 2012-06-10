@@ -39,8 +39,8 @@ H(s) = 1 / (s^2 + s/Q + 1)
  * See @ref struct smaths_filter
  */
 struct smaths_lowpass {
-    struct smaths_graph *graph;
     struct gln_node node;
+    struct smaths_graph *graph;
     struct gln_socket out; /** Output */
     struct smaths_parameter in; /** Input */
     struct smaths_parameter freq; /** The corner frequency */

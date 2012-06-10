@@ -37,8 +37,8 @@
  * Mixer
  */
 struct smaths_mix {
-    struct smaths_graph *graph; /** Graph for this mixer */
     struct gln_node node; /** Node for this mixer */
+    struct smaths_graph *graph; /** Graph for this mixer */
     struct gln_socket out; /** Output */
     atomic_list_t in; /** Input parameters */
     atomic_list_t in_amp; /** Amplitude parameters */

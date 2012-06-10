@@ -14,7 +14,7 @@ n=1                2
  *
  * When @c skew is 0.5, the default, this produces a true triangle
  * wave.  Other values of @c skew will produce waveforms with the peak
- * off the triangle offset to one side of the wave, with a sawtooth
+ * of the triangle offset to one side of the wave, with a sawtooth
  * wave as the limit.
  *
  * If the @c scale parameter is set, the (bandlimited) amplitude of
@@ -57,8 +57,8 @@ n=1                2
  * See @ref struct smaths_synth
  */
 struct smaths_triangle {
-    struct smaths_graph *graph; /** Graph for this synth */
     struct gln_node node; /** Node for this synth */
+    struct smaths_graph *graph; /** Graph for this synth */
     struct gln_socket out; /** Output socket */
     struct smaths_parameter freq; /** Frequency divided by sample rate */
     struct smaths_parameter amp; /** Amplitude */

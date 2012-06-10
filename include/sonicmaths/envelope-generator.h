@@ -79,8 +79,8 @@ enum smaths_envg_state {
  * Envelope Generator
  */
 struct smaths_envg {
-    struct smaths_graph *graph;
     struct gln_node node;
+    struct smaths_graph *graph;
     struct gln_socket ctl; /** Input control data */
     struct gln_socket out; /** Output */
     struct smaths_parameter attack_t; /** Attack time */
