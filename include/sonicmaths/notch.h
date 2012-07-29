@@ -58,7 +58,7 @@ struct smaths_notch {
  *
  * See @ref smaths_lowpass_destroy
  */
-inline void smaths_notch_destroy(struct smaths_notch *notch) {
+static inline void smaths_notch_destroy(struct smaths_notch *notch) {
     smaths_lowpass_destroy((struct smaths_lowpass *) notch);
 }
 

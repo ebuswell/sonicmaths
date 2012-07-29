@@ -58,7 +58,7 @@ struct smaths_bandpass {
  *
  * See @ref smaths_lowpass_destroy
  */
-inline void smaths_bandpass_destroy(struct smaths_bandpass *bandpass) {
+static inline void smaths_bandpass_destroy(struct smaths_bandpass *bandpass) {
     smaths_lowpass_destroy((struct smaths_lowpass *) bandpass);
 }
 
