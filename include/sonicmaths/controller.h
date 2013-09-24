@@ -4,7 +4,7 @@
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -31,10 +31,9 @@
  * Controller
  */
 struct smaths_ctlr {
-    struct gln_node node; /** Node for this controller */
-    struct smaths_graph *graph; /** Graph for this controller */
-    struct gln_socket out; /** Output */
-    struct gln_socket ctl; /** Output control */
+    struct gln_node; /** Node for this controller */
+    struct gln_socket *out; /** Output */
+    struct gln_socket *ctl; /** Output control */
 };
 
 /**
@@ -45,6 +44,6 @@ void smaths_ctlr_destroy(struct smaths_ctlr *ctlr);
 /**
  * Initialize controller
  */
-int smaths_ctlr_init(struct smaths_ctlr *ctlr, struct smaths_graph *graph, gln_process_fp_t func, void *arg);
+int smaths_ctlr_init(struct smaths_ctlr *ctlr, struct smaths_graph *graph, gln_process_fp_t func, void (*destroy)(struct smaths_ctlr *));
 
 #endif /* ! SONICMATHS_CONTROLLER_H */

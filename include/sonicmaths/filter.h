@@ -7,7 +7,7 @@
  * a frequency parameter, but it often does.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -35,10 +35,9 @@
  * Generic Filter
  */
 struct smaths_filter {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
+    struct gln_node;
+    struct gln_socket *out; /** Output */
+    struct smaths_parameter *in; /** Input */
 };
 
 /**
@@ -49,6 +48,6 @@ void smaths_filter_destroy(struct smaths_filter *filter);
 /**
  * Initialize Filter
  */
-int smaths_filter_init(struct smaths_filter *filter, struct smaths_graph *graph, gln_process_fp_t func, void *arg);
+int smaths_filter_init(struct smaths_filter *filter, struct smaths_graph *graph, gln_process_fp_t func, void (*destroy)(struct smaths_filter *));
 
 #endif /* ! SONICMATHS_FILTER_H */

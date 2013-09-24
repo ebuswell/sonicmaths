@@ -18,7 +18,7 @@ n=1      2
  * frequency value.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -38,10 +38,9 @@ n=1      2
 #ifndef SONICMATHS_PARABOLA_H
 #define SONICMATHS_PARABOLA_H 1
 
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <sonicmaths/synth.h>
 #include <sonicmaths/integrator.h>
 
@@ -51,23 +50,15 @@ n=1      2
  * See @ref struct smaths_synth
  */
 struct smaths_bola {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
-    atomic_t scale;
+    struct smaths_synth;
+    atomic_bool scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
         * is probably not what you want unless the frequency is
         * constant.  For manual scaling, note that if a given
         * frequency doesn't clip, no frequency above that will clip.
         */
-    struct smaths_intg_matrix intg1_matrix;
-    struct smaths_intg_matrix intg2_matrix;
+    struct smaths_intg_matrix *intg_matrix;
 };
 
 /**
@@ -75,15 +66,15 @@ struct smaths_bola {
  *
  * See @ref smaths_synth_destroy
  */
-static inline void smaths_bola_destroy(struct smaths_bola *bola) {
-    smaths_synth_destroy((struct smaths_synth *) bola);
-}
+void smaths_bola_destroy(struct smaths_bola *bola);
 
 /**
  * Initialize parabola synth
  *
  * See @ref smaths_synth_init
  */
-int smaths_bola_init(struct smaths_bola *bola, struct smaths_graph *graph);
+int smaths_bola_init(struct smaths_bola *bola, struct smaths_graph *graph, void (*destroy)(struct smaths_bola *));
+
+struct smaths_bola *smaths_bola_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_PARABOLA_H */

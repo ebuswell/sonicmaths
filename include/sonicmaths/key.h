@@ -45,7 +45,7 @@ r * 2
  * I'll probably add it.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -66,8 +66,7 @@ r * 2
 #define SONICMATHS_KEY_H 1
 
 #include <stddef.h>
-#include <atomickit/atomic-types.h>
-#include <atomickit/spinlock.h>
+#include <atomickit/atomic-rcp.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
@@ -76,28 +75,28 @@ r * 2
  * Tuning array
  */
 struct smaths_key_tuning {
+    struct arcp_region;
     size_t tuning_length; /** The length of the array */
-    float tuning[1]; /** The array */
+    float tuning[]; /** The array */
 };
 
 /**
  * Key
  */
 struct smaths_key {
-    struct gln_node node; /** Node for this key */
-    struct smaths_graph *graph; /** Graph for this key */
-    struct smaths_parameter note; /** Input note */
-    struct smaths_parameter root; /** Root frequency, as a fraction of sample rate */
-    struct gln_socket freq; /** Output frequency, as a fraction of sample rate */
-    const struct smaths_key_tuning *tuning; /** The tuning, of type struct smaths_key_tuning */
-    spinlock_t tuning_lock; /** For synchronizing changes in the tuning */
-    atomic_float_t last_root;
+    struct gln_node;
+    struct smaths_parameter *note; /** Input note */
+    struct smaths_parameter *root; /** Root frequency, as a fraction of sample rate */
+    struct gln_socket *freq; /** Output frequency, as a fraction of sample rate */
+    arcp_t tuning;
 };
 
 /**
  * Initialize key
  */
-int smaths_key_init(struct smaths_key *key, struct smaths_graph *graph);
+int smaths_key_init(struct smaths_key *key, struct smaths_graph *graph, void (*destroy)(struct smaths_key *));
+
+struct smaths_key *smaths_key_create(struct smaths_graph *graph);
 
 /**
  * Destroy key
@@ -111,7 +110,9 @@ void smaths_key_destroy(struct smaths_key *key);
  * and the variable passed is not referenced after return, unless
  * using one of the predefined values.
  */
-int smaths_key_set_tuning(struct smaths_key *key, const struct smaths_key_tuning *tuning);
+static inline void smaths_key_set_tuning(struct smaths_key *key, const struct smaths_key_tuning *tuning) {
+    arcp_store(&key->tuning, tuning);
+}
 
 /**
  * Transform a note into a frequency according to the semantics of
@@ -224,24 +225,42 @@ float smaths_key_note2freq(struct smaths_key *key, float note);
  */
 #define SMATHS_A_FLAT 415.304697579945
 
+struct smaths_key_tuning_western {
+    struct arcp_region;
+    size_t tuning_length;
+    float tuning[7];
+};
+
+struct smaths_key_tuning_chromatic {
+    struct arcp_region;
+    size_t tuning_length;
+    float tuning[12];
+};
+
 /**
  * Major tuning
  */
-extern const struct smaths_key_tuning *SMATHS_MAJOR_TUNING;
+#define SMATHS_MAJOR_TUNING ((struct smaths_key_tuning *) &smaths_major_tuning)
+
+extern struct smaths_key_tuning_western smaths_major_tuning;
 
 /**
  * Minor tuning
  */
-extern const struct smaths_key_tuning *SMATHS_MINOR_TUNING;
+#define SMATHS_MINOR_TUNING ((struct smaths_key_tuning *) &smaths_minor_tuning)
+
+extern struct smaths_key_tuning_western smaths_minor_tuning;
 
 /**
  * Pythagorean tuning
  */
-extern const struct smaths_key_tuning *SMATHS_PYTHAGOREAN_TUNING;
+#define SMATHS_PYTHAGOREAN_TUNING ((struct smaths_key_tuning *) &smaths_pythagorean_tuning)
+
+extern struct smaths_key_tuning_chromatic smaths_pythagorean_tuning;
 
 /**
  * Equal temperament
  */
-#define SMATHS_EQUAL_TUNING ((struct smaths_key_tuning *) -1)
+#define SMATHS_EQUAL_TUNING ((struct smaths_key_tuning *) NULL)
 
 #endif /* ! SONICMATHS_KEY_H */

@@ -1,5 +1,7 @@
 /*
- * Copyright 2011 Evan Buswell
+ * parameter.c
+ *
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -17,131 +19,44 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
+#include <atomickit/atomic-float.h>
+#include <atomickit/atomic-malloc.h>
 #include <graphline.h>
+#include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
 
-int smaths_parameter_init(struct smaths_parameter *p, struct gln_node *node, float value) {
+int smaths_parameter_init(struct smaths_parameter *parameter, struct gln_node *node, float value, void (*destroy)(struct smaths_parameter *)) {
     int r;
 
-    r = gln_socket_init(&p->p_dynamic, node, INPUT);
+    r = gln_socket_init(parameter, node, GLNS_INPUT, (void (*)(struct gln_socket *)) destroy);
     if(r != 0) {
 	return r;
     }
 
-    r = gln_socket_init(&p->p_static, node, INPUT);
-    if(r != 0) {
-	return r;
-    }
-
-    atomic_float_set(&p->value, value);
+    atomic_float_store_explicit(&parameter->value, value, memory_order_release);
 
     return 0;
 }
 
-void smaths_parameter_destroy(struct smaths_parameter *p) {
-    gln_socket_destroy(&p->p_static);
-    gln_socket_destroy(&p->p_dynamic);
+static void __smaths_parameter_destroy(struct smaths_parameter *parameter) {
+    smaths_parameter_destroy(parameter);
+    afree(parameter, sizeof(struct smaths_parameter));
 }
 
-float *smaths_parameter_get_buffer(struct smaths_parameter *p) {
-    float value = atomic_float_read(&p->value);
-    if(isnanf(value)) {
-	return gln_socket_get_buffer(&p->p_dynamic);
-    } else if(gln_socket_ready(&p->p_static)) {
-	return gln_socket_get_buffer(&p->p_static);
-    } else {
-	float *buffer = gln_socket_alloc_buffer(&p->p_static);
-	size_t i;
-	for(i = 0; i < p->p_static.graph->buffer_nmemb; i++) {
-	    buffer[i] = value;
-	}
-	return buffer;
+struct smaths_parameter *smaths_parameter_create(struct gln_node *node, float value) {
+    int r;
+    struct smaths_parameter *ret;
+
+    ret = amalloc(sizeof(struct smaths_parameter));
+    if(ret == NULL) {
+	return NULL;
     }
+
+    r = smaths_parameter_init(ret, node, value, __smaths_parameter_destroy);
+    if(r != 0) {
+	afree(ret, sizeof(struct smaths_parameter));
+	return NULL;
+    }
+
+    return ret;
 }
-
-/* int smaths_parameter_set(struct smaths_parameter *p, float value) { */
-/*     if(p->sched->offset >= 0) { */
-/* 	/\* called from within the scheduler *\/ */
-/* 	float *buffer; */
-/* 	int i; */
-/* 	if(!gln_socket_ready(p->p_static)) { */
-/* 	    /\* we were dynamic until now *\/ */
-/* 	    float *old_buffer = gln_socket_get_buffer(p->p_dynamic); */
-/* 	    if(old_buffer == NULL) { */
-/* 		return -1; */
-/* 	    } */
-/* 	    buffer = gln_socket_alloc_buffer(p->p_static); */
-/* 	    if(buffer == NULL) { */
-/* 		return -1; */
-/* 	    } */
-/* 	    memcpy(buffer, old_buffer, sizeof(float) * p->sched->offset); */
-/* 	} else { */
-/* 	    buffer = (float *) gln_socket_get_buffer(p->p_static); */
-/* 	} */
-/* 	for(i = p->sched->offset; i < p->p_static->graph->buffer_nmem; i++) { */
-/* 	    buffer[i] = value; */
-/* 	} */
-/*     } */
-/*     atomic_float_set(&p->value, value); */
-/*     return 0; */
-/* } */
-
-/* int smaths_parameter_connect(struct smaths_parameter *p, struct gln_socket *other) { */
-/*     if(p->sched->offset >= 0) { */
-/* 	/\* called from within the scheduler *\/ */
-/* 	float *buffer; */
-/* 	float *new_buffer; */
-/* 	if(!gln_socket_ready(p->p_static)) { */
-/* 	    float *old_buffer = gln_socket_get_buffer(p->p_dynamic); */
-/* 	    buffer = gln_socket_alloc_buffer(p->p_static); */
-/* 	    if(buffer == NULL) { */
-/* 		return -1; */
-/* 	    } */
-/* 	    memcpy(buffer, old_buffer, sizeof(float) * p->sched->offset); */
-/* 	    int r = gln_socket_connect(p->p_dynamic, other); */
-/* 	    if(r != 0) { */
-/* 		memcpy(buffer + p->sched->offset, old_buffer + p->sched->offset, sizeof(float) * (p->p_static->graph->buffer_nmem - p->sched->offset)); */
-/* 		return r; */
-/* 	    } */
-/* 	    new_buffer = gln_socket_reget_buffer(p->p_dynamic); */
-/* 	    if(new_buffer == NULL) { */
-/* 		memcpy(buffer + p->sched->offset, old_buffer + p->sched->offset, sizeof(float) * (p->p_static->graph->buffer_nmem - p->sched->offset)); */
-/* 		return -1; */
-/* 	    } */
-/* 	} else { */
-/* 	    buffer = gln_socket_get_buffer(p->p_static); */
-/* 	    int r = gln_socket_connect(p->p_dynamic, other); */
-/* 	    if(r != 0) { */
-/* 		return r; */
-/* 	    } */
-/* 	    new_buffer = gln_socket_reget_buffer(p->p_dynamic); */
-/* 	    if(new_buffer == NULL) { */
-/* 		return -1; */
-/* 	    } */
-/* 	} */
-/* 	memcpy(buffer + p->sched->offset, new_buffer + p->sched->offset, sizeof(float) * (p->p_static->graph->buffer_nmem - p->sched->offset)); */
-/*     } else { */
-/* 	int r = gln_socket_connect(p->p_dynamic, other); */
-/* 	if(r != 0) { */
-/* 	    return r; */
-/* 	} */
-/*     } */
-/*     atomic_float_set(&p->value, NAN); */
-/*     return 0; */
-/* } */
-
-/* int smaths_setup_parameter(struct smaths_parameter *p) { */
-/*     float value = atomic_float_read(&p->value); */
-/*     if(!isnanf(value)) { */
-/* 	float *buffer = (float *) gln_socket_alloc_buffer(p->p_static); */
-/* 	if(buffer == NULL) { */
-/* 	    return -1; */
-/* 	} */
-/* 	int i; */
-/* 	for(i = 0; i < p->p_static->graph->buffer_nmem; i++) { */
-/* 	    buffer[i] = value; */
-/* 	} */
-/* 	return 0; */
-/*     } */
-/* } */

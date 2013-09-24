@@ -1,7 +1,7 @@
 /*
  * noise.c
  * 
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -18,15 +18,15 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <math.h>
-#include <stdlib.h>
+#include <atomickit/atomic.h>
+#include <atomickit/atomic-rcp.h>
+#include <atomickit/atomic-malloc.h>
 #include <graphline.h>
+#include "sonicmaths/buffer.h"
 #include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
 #include "sonicmaths/noise.h"
-
-const float A[] = { 0.02109238, 0.07113478, 0.68873558 }; // rescaled by (1+P)/(1-P)
-const float P[] = { 0.3190,  0.7756,  0.9613  };
+#include "mtrand.h"
 
 struct float2 {
     float a;
@@ -37,109 +37,144 @@ static inline struct float2 gaussian_random() {
     float s, u1, u2;
     struct float2 r;
     do {
-	u1 = ((float) random()) / ((float) (RAND_MAX >> 1)) - 1.0f;
-	u2 = ((float) random()) / ((float) (RAND_MAX >> 1)) - 1.0f;
+	u1 = mt_rand_float();
+	u2 = mt_rand_float();
 	s = u1 * u1 + u2 * u2;
-    } while(s >= 1.0);
-    s = sqrtf(-2.0 * logf(s) / s);
+    } while(s >= 1);
+    s = sqrtf(-2 * logf(s) / s);
     r.a = s * u1;
     r.b = s * u2;
     return r;
 }
 
-static inline float pink_random(float state[3]) {
-    static const float RMI2 = 2.0 / ((float) RAND_MAX);
-    static const float offset = 0.02109238 + 0.07113478 + 0.68873558;
+static int smaths_noise_process(struct smaths_noise *noise) {
+    int r, i, j;
 
-    float temp = (float) random();
-    state[0] = P[0] * (state[0] - temp) + temp;
-    temp = (float) random();
-    state[1] = P[1] * (state[1] - temp) + temp;
-    temp = (float) random();
-    state[2] = P[2] * (state[2] - temp) + temp;
-    return ((A[0] * state[0] + A[1] * state[1] + A[2] * state[2]) * RMI2 - offset);
-}
+    struct smaths_buffer *amp_buffer;
+    float amp;
+    struct smaths_buffer *offset_buffer;
+    float offset;
+    struct smaths_buffer *out_buffer;
+    enum smaths_noise_kind kind;
 
-static int smaths_noise_process(struct smaths_noise *self) {
-    float *out_buffer = gln_socket_get_buffer(&self->out);
+    int nframes;
+    int nchannels;
+
+    r = gln_get_buffers(2, noise->amp, &amp_buffer,
+			noise->offset, &offset_buffer);
+    if(r != 0) {
+	return r;
+    }
+
+    amp = smaths_parameter_go(noise->amp, amp_buffer);
+    offset = smaths_parameter_go(noise->offset, offset_buffer);
+
+    nframes = smaths_node_frames_per_period(noise);
+    if(nframes < 0) {
+	return nframes;
+    }
+
+    nchannels = SMATHS_MAX_NCHANNELS(2, amp_buffer, offset_buffer);
+
+    out_buffer = smaths_alloc_buffer(noise->out, nframes, nchannels);
     if(out_buffer == NULL) {
 	return -1;
     }
-    float *amp_buffer = smaths_parameter_get_buffer(&self->amp);
-    if(amp_buffer == NULL) {
-	return -1;
-    }
-    float *offset_buffer = smaths_parameter_get_buffer(&self->offset);
-    if(offset_buffer == NULL) {
-	return -1;
-    }
 
-    int kind = atomic_read(&self->kind);
-    size_t i;
-    struct float2 r;
-    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
-	switch(kind) {
-	case SMATHS_WHITE:
-	    r = gaussian_random();
-	    out_buffer[i] = r.a * amp_buffer[i] + offset_buffer[i];
-	    i += 1;
-	    out_buffer[i] = r.b * amp_buffer[i] + offset_buffer[i];
-	    break;
-	case SMATHS_PINK:
-	    out_buffer[i] = pink_random(self->state) * amp_buffer[i] + offset_buffer[i];
-	    break;
-	case SMATHS_RED:
-	    // not implemented
-	default:
-	    // unknown
-	    return -1;
+    kind = atomic_load_explicit(&noise->kind, memory_order_consume);
+
+    float prev = NAN;
+    for(i = 0; i < nframes; i++) {
+	for(j = 0; j < nchannels; j++) {
+	    float out;
+	    switch(kind) {
+	    case SMATHSN_GAUSSIAN:
+		if(!isnan(prev)) {
+		    out = prev;
+		    prev = NAN;
+		} else {
+		    struct float2 r = gaussian_random();
+		    out = r.a;
+		    prev = r.b;
+		}
+		break;
+	    case SMATHSN_UNIFORM:
+	    default:
+		out = mt_rand_float();
+	    }
+	    out_buffer->data[i * nchannels + j] = out * smaths_value(amp_buffer, i, j, amp) + smaths_value(offset_buffer, i, j, offset);
 	}
     }
+
     return 0;
 }
 
-int smaths_noise_init(struct smaths_noise *self, struct smaths_graph *graph) {
+int smaths_noise_init(struct smaths_noise *noise, struct smaths_graph *graph, void (*destroy)(struct smaths_noise *)) {
     int r;
 
-    self->graph = graph;
-    self->state[0] = 0.0;
-    self->state[1] = 0.0;
-    self->state[2] = 0.0;
-    atomic_set(&self->kind, SMATHS_WHITE);
-    srandom((unsigned int) time(NULL));
-
-    r = gln_node_init(&self->node, &graph->graph, (gln_process_fp_t) smaths_noise_process, self);
+    r = gln_node_init(noise, graph, (gln_process_fp_t) smaths_noise_process, (void (*)(struct gln_node *)) destroy);
     if(r != 0) {
-	return r;
+	goto undo0;
     }
 
-    r = gln_socket_init(&self->out, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
+    noise->out = gln_socket_create(noise, GLNS_OUTPUT);
+    if(noise->out == NULL) {
+	r = -1;
+	goto undo1;
     }
     
-    r = smaths_parameter_init(&self->amp, &self->node, 1.0f);
-    if(r != 0) {
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    noise->amp = smaths_parameter_create(noise, 1.0f);
+    if(noise->amp == NULL) {
+	r = -1;
+	goto undo2;
     }
 
-    r = smaths_parameter_init(&self->offset, &self->node, 0.0f);
-    if(r != 0) {
-	smaths_parameter_destroy(&self->amp);
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    noise->offset = smaths_parameter_create(noise, 0.0f);
+    if(noise->offset == NULL) {
+	r = -1;
+	goto undo3;
     }
+
+    atomic_store(&noise->kind, SMATHSN_GAUSSIAN);
 
     return 0;
+
+undo3:
+    arcp_release(noise->amp);
+undo2:
+    arcp_release(noise->out);
+undo1:
+    gln_node_destroy(noise);
+undo0:
+    return r;
 }
 
-void smaths_noise_destroy(struct smaths_noise *self) {
-    smaths_parameter_destroy(&self->offset);
-    smaths_parameter_destroy(&self->amp);
-    gln_socket_destroy(&self->out);
-    gln_node_destroy(&self->node);
+void smaths_noise_destroy(struct smaths_noise *noise) {
+    arcp_release(noise->offset);
+    arcp_release(noise->amp);
+    arcp_release(noise->out);
+    gln_node_destroy(noise);
+}
+
+static void _smaths_noise_destroy(struct smaths_noise *noise) {
+    smaths_noise_destroy(noise);
+    afree(noise, sizeof(struct smaths_noise));
+}
+
+struct smaths_noise *smaths_noise_create(struct smaths_graph *graph) {
+    struct smaths_noise *ret;
+    int r;
+
+    ret = amalloc(sizeof(struct smaths_noise));
+    if(ret == NULL) {
+	return NULL;
+    }
+
+    r = smaths_noise_init(ret, graph, _smaths_noise_destroy);
+    if(r != 0) {
+	afree(ret, sizeof(struct smaths_noise));
+	return NULL;
+    }
+
+    return ret;
 }

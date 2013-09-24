@@ -4,7 +4,7 @@
  * The clock outputs a timestamp for each sample.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -34,17 +34,22 @@
  * The clock outputs a timestamp for each sample.
  */
 struct smaths_clock {
-    struct gln_node node; /** Node for this clock */
-    struct smaths_graph *graph; /** Graph for this clock */
-    struct gln_socket clock; /** Output clock port */
-    struct smaths_parameter rate; /** Rate at which this clock progresses */
-    double current; /** The current value */
+    struct gln_node; /** Node for this clock */
+    struct gln_socket *clock; /** Output clock socket */
+    struct smaths_parameter *rate; /** Rate at which this clock progresses */
+    int nchannels; /** The number of channels of state we're currently storing. */
+    float *t; /** The current time */
 };
 
 /**
  * Initialize clock
  */
-int smaths_clock_init(struct smaths_clock *clock, struct smaths_graph *graph);
+int smaths_clock_init(struct smaths_clock *clock, struct smaths_graph *graph, void (*destroy)(struct smaths_clock *clock));
+
+/**
+ * Create clock
+ */
+struct smaths_clock *smaths_clock_create(struct smaths_graph *graph);
 
 /**
  * Destroy clock

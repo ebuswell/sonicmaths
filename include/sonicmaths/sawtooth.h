@@ -16,7 +16,7 @@ n=1    n
  * frequency value.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -36,10 +36,9 @@ n=1    n
 #ifndef SONICMATHS_SAWTOOTH_H
 #define SONICMATHS_SAWTOOTH_H 1
 
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <sonicmaths/synth.h>
 #include <sonicmaths/integrator.h>
 
@@ -49,22 +48,15 @@ n=1    n
  * See @ref struct smaths_synth
  */
 struct smaths_saw {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
-    atomic_t scale;
+    struct smaths_synth;
+    atomic_bool scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
         * is probably not what you want unless the frequency is
         * constant.  For manual scaling, note that if a given
         * frequency doesn't clip, no frequency above that will clip.
         */
-    struct smaths_intg_matrix intg_matrix;
+    struct smaths_intg_matrix *intg_matrix;
 };
 
 /**
@@ -72,15 +64,15 @@ struct smaths_saw {
  *
  * See @ref smaths_synth_destroy
  */
-static inline void smaths_saw_destroy(struct smaths_saw *saw) {
-    smaths_synth_destroy((struct smaths_synth *) saw);
-}
+void smaths_saw_destroy(struct smaths_saw *saw);
 
 /**
  * Initialize sawtooth synth
  *
  * See @ref smaths_synth_init
  */
-int smaths_saw_init(struct smaths_saw *saw, struct smaths_graph *graph);
+int smaths_saw_init(struct smaths_saw *saw, struct smaths_graph *graph, void (*destroy)(struct smaths_saw *));
+
+struct smaths_saw *smaths_saw_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_SAWTOOTH_H */

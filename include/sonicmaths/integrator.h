@@ -16,7 +16,7 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -37,6 +37,7 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
 #ifndef SONICMATHS_INTEGRATOR_H
 #define SONICMATHS_INTEGRATOR_H 1
 
+#include <float.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
@@ -63,11 +64,9 @@ struct smaths_intg_matrix {
  * See @ref struct smaths_filter
  */
 struct smaths_integrator {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_intg_matrix intg_matrix;
+    struct smaths_filter;
+    int nchannels;
+    struct smaths_intg_matrix *intg_matrix;
 };
 
 /**
@@ -75,32 +74,32 @@ struct smaths_integrator {
  *
  * See @ref smaths_filter_destroy
  */
-static inline void smaths_integrator_destroy(struct smaths_integrator *integrator) {
-    smaths_filter_destroy((struct smaths_filter *) integrator);
-}
+void smaths_integrator_destroy(struct smaths_integrator *integrator);
 
 /**
  * Initialize integration filter
  *
  * See @ref smaths_filter_init
  */
-int smaths_integrator_init(struct smaths_integrator *integrator, struct smaths_graph *graph);
+int smaths_integrator_init(struct smaths_integrator *integrator, struct smaths_graph *graph, void (*destroy)(struct smaths_integrator *));
 
-#define WSINC_0 0.859924743f
-#define WSINC_1 0.0853056678f
-#define WSINC_2 -0.0199242204f
-#define WSINC_3 0.00555994799f
-#define WSINC_4 -0.000883763365f
+struct smaths_integrator *smaths_integrator_create(struct smaths_graph *graph);
 
-#define LEAKINESS 0.995f
+#define SMATHSI_WSINC_0 0.859924743f
+#define SMATHSI_WSINC_1 0.0853056678f
+#define SMATHSI_WSINC_2 -0.0199242204f
+#define SMATHSI_WSINC_3 0.00555994799f
+#define SMATHSI_WSINC_4 -0.000883763365f
+
+#define SMATHSI_LEAKINESS 0.995f
 
 static inline float smaths_do_integral(struct smaths_intg_matrix *intg_matrix, float x) {
-    float y = intg_matrix->y1 * LEAKINESS
-	+ ((x + intg_matrix->x8) * WSINC_4
-	   + (intg_matrix->x1 + intg_matrix->x7) * WSINC_3
-	   + (intg_matrix->x2 + intg_matrix->x6) * WSINC_2
-	   + (intg_matrix->x3 + intg_matrix->x5) * WSINC_1
-	   + intg_matrix->x4 * WSINC_0);
+    float y = intg_matrix->y1 * SMATHSI_LEAKINESS
+	+ ((x + intg_matrix->x8) * SMATHSI_WSINC_4
+	   + (intg_matrix->x1 + intg_matrix->x7) * SMATHSI_WSINC_3
+	   + (intg_matrix->x2 + intg_matrix->x6) * SMATHSI_WSINC_2
+	   + (intg_matrix->x3 + intg_matrix->x5) * SMATHSI_WSINC_1
+	   + intg_matrix->x4 * SMATHSI_WSINC_0);
 
     intg_matrix->x8 = intg_matrix->x7;
     intg_matrix->x7 = intg_matrix->x6;
@@ -110,14 +109,16 @@ static inline float smaths_do_integral(struct smaths_intg_matrix *intg_matrix, f
     intg_matrix->x3 = intg_matrix->x2;
     intg_matrix->x2 = intg_matrix->x1;
     intg_matrix->x1 = x;
-    if(y == INFINITY) {
-	intg_matrix->y1 = 1.0f;
-    } else if (y == -INFINITY) {
-	intg_matrix->y1 = -1.0f;
-    } else {
+    if(isnormal(y) || y == 0) {
 	intg_matrix->y1 = y;
+    } else if(y == INFINITY) {
+	intg_matrix->y1 = FLT_MAX;
+    } else if(y == -INFINITY) {
+	intg_matrix->y1 = -FLT_MAX;
+    } else {
+	intg_matrix->y1 = 0.0f;
     }
     return y;
 }
 
-#endif /* ! SONICMATHS_DISTORTION_H */
+#endif /* ! SONICMATHS_INTEGRATOR_H */

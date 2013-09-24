@@ -6,7 +6,7 @@
  * a time lag.
  */
 /*
- * Copyright 2012 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -37,14 +37,10 @@
  * See @ref struct smaths_filter
  */
 struct smaths_porta {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_parameter lag; /** The lag, in samples */
-    float start; /** The value being progressed from */
-    float target; /** The value being progressed to */
-    float last; /** The previous value */
+    struct smaths_filter;
+    struct smaths_parameter *lag; /** The lag, in samples */
+    int nchannels;
+    float *y1; /** The previous value */
 };
 
 /**
@@ -52,15 +48,15 @@ struct smaths_porta {
  *
  * See @ref smaths_filter_destroy
  */
-static inline void smaths_porta_destroy(struct smaths_porta *porta) {
-    smaths_filter_destroy((struct smaths_filter *) porta);
-}
+void smaths_porta_destroy(struct smaths_porta *porta);
 
 /**
  * Initialize portamento filter
  *
  * See @ref smaths_filter_init
  */
-int smaths_porta_init(struct smaths_porta *self, struct smaths_graph *graph);
+int smaths_porta_init(struct smaths_porta *self, struct smaths_graph *graph, void (*destroy)(struct smaths_porta *));
+
+struct smaths_porta *smaths_porta_create(struct smaths_graph *graph);
 
 #endif

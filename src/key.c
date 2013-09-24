@@ -1,7 +1,7 @@
 /*
  * key.c
  * 
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -20,18 +20,17 @@
  */
 
 #include <stddef.h>
-#include <string.h>
-#include <atomickit/atomic-float.h>
-#include <atomickit/spinlock.h>
+#include <math.h>
+#include <atomickit/atomic-rcp.h>
+#include <atomickit/atomic-malloc.h>
 #include <graphline.h>
+#include "sonicmaths/buffer.h"
 #include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
 #include "sonicmaths/key.h"
 
-static const struct {
-    size_t tuning_length;
-    float tuning[7];
-} _smaths_major_tuning = {
+struct smaths_key_tuning_western smaths_major_tuning = {
+    ARCP_REGION_VAR_INIT(0, 1, NULL, NULL),
     7, {
 	1.0,
 	9.0/8.0,
@@ -43,12 +42,8 @@ static const struct {
     }
 };
 
-const struct smaths_key_tuning *SMATHS_MAJOR_TUNING = (struct smaths_key_tuning *) &_smaths_major_tuning;
-
-static const struct {
-    size_t tuning_length;
-    float tuning[7];
-} _smaths_minor_tuning = {
+struct smaths_key_tuning_western smaths_minor_tuning = {
+    ARCP_REGION_VAR_INIT(0, 1, NULL, NULL),
     7, {
 	1.0,
 	9.0/8.0,
@@ -60,12 +55,8 @@ static const struct {
     }
 };
 
-const struct smaths_key_tuning *SMATHS_MINOR_TUNING = (struct smaths_key_tuning *) &_smaths_minor_tuning;
-
-const struct {
-    size_t tuning_length;
-    float tuning[12];
-} _smaths_pythagorean_tuning = {
+struct smaths_key_tuning_chromatic smaths_pythagorean_tuning = {
+    ARCP_REGION_VAR_INIT(0, 1, NULL, NULL),
     12, {
 	1.0,
 	256.0/243.0,
@@ -81,8 +72,6 @@ const struct {
 	243.0/128.0
     }
 };
-
-const struct smaths_key_tuning *SMATHS_PYTHAGOREAN_TUNING = (struct smaths_key_tuning *) &_smaths_pythagorean_tuning;
 
 static inline float smaths_key_note2freq_param(float note, float root, const struct smaths_key_tuning *tuning) {
     if(tuning == SMATHS_EQUAL_TUNING) {
@@ -100,9 +89,9 @@ static inline float smaths_key_note2freq_param(float note, float root, const str
 	    m = tuning_length + m;
 	}
 	float freq = tuning->tuning[m];
-	if(f != 0.0f) {
+	if(f != 0) {
 	    if(m == (tuning_length - 1)) {
-		freq *= powf(2.0f/tuning->tuning[m], f);
+		freq *= powf(2/tuning->tuning[m], f);
 	    } else {
 		freq *= powf(tuning->tuning[m + 1]/tuning->tuning[m], f);
 	    }
@@ -116,105 +105,121 @@ static inline float smaths_key_note2freq_param(float note, float root, const str
     }
 }
 
-static int smaths_key_process(struct smaths_key *self) {
-    float *freq_buffer = gln_socket_get_buffer(&self->freq);
+static int smaths_key_process(struct smaths_key *key) {
+    int r, i, j;
+
+    struct smaths_buffer *note_buffer;
+    struct smaths_buffer *root_buffer;
+
+    r = gln_get_buffers(2, key->note, &note_buffer, key->root, &root_buffer);
+    if(r != 0) {
+	return r;
+    }
+
+    float note = smaths_parameter_go(key->note, note_buffer);
+    float root = smaths_parameter_go(key->root, root_buffer);
+
+    int nframes = smaths_node_frames_per_period(key);
+    if(nframes < 0) {
+	return nframes;
+    }
+
+    int nchannels = SMATHS_MAX_NCHANNELS(2, note_buffer, root_buffer);
+
+    struct smaths_buffer *freq_buffer = smaths_alloc_buffer(key->freq, nframes, nchannels);
     if(freq_buffer == NULL) {
 	return -1;
     }
-    float *note_buffer = smaths_parameter_get_buffer(&self->note);
-    if(note_buffer == NULL) {
-	return -1;
+
+    struct smaths_key_tuning *tuning = (struct smaths_key_tuning *) arcp_load(&key->tuning);
+
+    for(i = 0; i < nframes; i++) {
+	for(j = 0; j < nchannels; j++) {
+	    freq_buffer->data[i * nchannels + j]
+		= smaths_key_note2freq_param(smaths_value(note_buffer, i, j, note),
+					     smaths_value(root_buffer, i, j, root),
+					     tuning);
+	}
     }
-    float *root_buffer = smaths_parameter_get_buffer(&self->root);
-    if(root_buffer == NULL) {
-	return -1;
-    }
-    size_t i;
-    spinlock_multilock(&self->tuning_lock);
-    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
-	freq_buffer[i] = smaths_key_note2freq_param(note_buffer[i], root_buffer[i], self->tuning);
-    }
-    spinlock_unlock(&self->tuning_lock);
-    atomic_float_set(&self->last_root, root_buffer[i - 1]);
+
+    arcp_release(tuning);
+
     return 0;
 }
 
-float smaths_key_note2freq(struct smaths_key *self, float note) {
-    float root = atomic_float_read(&self->root.value);
-    if(isnanf(root)) {
-	root = atomic_float_read(&self->last_root);
-    }
-    spinlock_multilock(&self->tuning_lock);
-    float ret = smaths_key_note2freq_param(note, root, self->tuning);
-    spinlock_unlock(&self->tuning_lock);
+float smaths_key_note2freq(struct smaths_key *key, float note) {
+    float root = smaths_parameter_get(key->root);
+    struct smaths_key_tuning *tuning = (struct smaths_key_tuning *) arcp_load(&key->tuning);
+    float ret = smaths_key_note2freq_param(note, root, tuning);
+    arcp_release(tuning);
     return ret;
 }
 
-int smaths_key_set_tuning(struct smaths_key *self, const struct smaths_key_tuning *tuning) {
-    if((tuning != SMATHS_EQUAL_TUNING)
-       && (tuning != SMATHS_MAJOR_TUNING)
-       && (tuning != SMATHS_MINOR_TUNING)
-       && (tuning != SMATHS_PYTHAGOREAN_TUNING)) {
-	const struct smaths_key_tuning *newtuning = malloc(sizeof(struct smaths_key_tuning) + (tuning->tuning_length - 1) * sizeof(float));
-	if(newtuning == NULL) {
-	    return -1;
-	}
-	memcpy(&newtuning, &tuning, sizeof(struct smaths_key_tuning) + (tuning->tuning_length - 1) * sizeof(float));
-	tuning = newtuning;
-    }
-    const struct smaths_key_tuning *oldtuning;
-    spinlock_lock(&self->tuning_lock);
-    oldtuning = self->tuning;
-    self->tuning = tuning;
-    spinlock_unlock(&self->tuning_lock);
-    if((oldtuning != SMATHS_MAJOR_TUNING)
-       && (oldtuning != SMATHS_EQUAL_TUNING)
-       && (oldtuning != SMATHS_MINOR_TUNING)
-       && (oldtuning != SMATHS_PYTHAGOREAN_TUNING)) {
-	free((void *) oldtuning);
-    }
-    return 0;
-}
-
-int smaths_key_init(struct smaths_key *self, struct smaths_graph *graph) {
+int smaths_key_init(struct smaths_key *key, struct smaths_graph *graph, void (*destroy)(struct smaths_key *)) {
     int r;
-    self->graph = graph;
 
-    r = gln_node_init(&self->node, &graph->graph, (gln_process_fp_t) smaths_key_process, self);
+    r = gln_node_init(key, graph, (gln_process_fp_t) smaths_key_process, (void (*)(struct gln_node *)) destroy);
     if(r != 0) {
-	return r;
+	goto undo0;
     }
 
-    r = gln_socket_init(&self->freq, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
+    key->freq = gln_socket_create(key, GLNS_OUTPUT);
+    if(key->freq == NULL) {
+	r = -1;
+	goto undo1;
     }
 
-    r = smaths_parameter_init(&self->note, &self->node, 0.0f);
-    if(r != 0) {
-	gln_socket_destroy(&self->freq);
-	gln_node_destroy(&self->node);
-	return r;
+    key->note = smaths_parameter_create(key, 0.0f);
+    if(key->note == NULL) {
+	r = -1;
+	goto undo2;
     }
 
-    r = smaths_parameter_init(&self->root, &self->node, smaths_graph_normalized_frequency(self->graph, SMATHS_C));
-    if(r != 0) {
-	smaths_parameter_destroy(&self->note);
-	gln_socket_destroy(&self->freq);
-	gln_node_destroy(&self->node);
-	return r;
+    key->root = smaths_parameter_create(key, smaths_graph_normalized_frequency(graph, SMATHS_C));
+    if(key->root == NULL) {
+	r = -1;
+	goto undo3;
     }
 
-    self->tuning = SMATHS_EQUAL_TUNING;
-    spinlock_init(&self->tuning_lock);
-    atomic_float_set(&self->last_root, smaths_graph_normalized_frequency(self->graph, SMATHS_C));
+    arcp_init(&key->tuning, SMATHS_EQUAL_TUNING);
     return 0;
+
+undo3:
+    arcp_release(key->note);
+undo2:
+    arcp_release(key->freq);
+undo1:
+    gln_node_destroy(key);
+undo0:
+    return r;
 }
 
-void smaths_key_destroy(struct smaths_key *self) {
-    gln_socket_destroy(&self->freq);
-    smaths_parameter_destroy(&self->note);
-    smaths_parameter_destroy(&self->root);
-    gln_node_destroy(&self->node);
+void smaths_key_destroy(struct smaths_key *key) {
+    arcp_store(&key->tuning, NULL);
+    arcp_release(key->root);
+    arcp_release(key->note);
+    arcp_release(key->freq);
+    gln_node_destroy(key);
+}
+
+static void __smaths_key_destroy(struct smaths_key *key) {
+    smaths_key_destroy(key);
+    afree(key, sizeof(struct smaths_key));
+}
+
+struct smaths_key *smaths_key_create(struct smaths_graph *graph) {
+    int r;
+    struct smaths_key *ret;
+
+    ret = amalloc(sizeof(struct smaths_key));
+    if(ret == NULL) {
+	return NULL;
+    }
+
+    r = smaths_key_init(ret, graph, __smaths_key_destroy);
+    if(r != 0) {
+	return NULL;
+    }
+
+    return ret;
 }

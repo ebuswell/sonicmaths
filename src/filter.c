@@ -1,7 +1,7 @@
 /*
  * filter.c
  * 
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -19,37 +19,43 @@
  * <http://www.gnu.org/licenses/>.
  */
 
+#include <atomickit/atomic-rcp.h>
 #include <graphline.h>
 #include "sonicmaths/parameter.h"
 #include "sonicmaths/filter.h"
 
-int smaths_filter_init(struct smaths_filter *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
+int smaths_filter_init(struct smaths_filter *filter, struct smaths_graph *graph, gln_process_fp_t func, void (*destroy)(struct smaths_filter *)) {
     int r;
-    self->graph = graph;
 
-    r = gln_node_init(&self->node, &graph->graph, func, arg);
+    r = gln_node_init(filter, graph, func, (void (*)(struct gln_node *)) destroy);
     if(r != 0) {
-	return r;
+	goto undo0;
     }
 
-    r = gln_socket_init(&self->out, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
+    filter->out = gln_socket_create(filter, GLNS_OUTPUT);
+    if(filter->out == NULL) {
+	r = -1;
+	goto undo1;
     }
 
-    r = smaths_parameter_init(&self->in, &self->node, 0.0f);
-    if(r != 0) {
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    filter->in = smaths_parameter_create(filter, 0.0f);
+    if(filter->in == NULL) {
+	r = -1;
+	goto undo2;
     }
 
     return 0;
+
+undo2:
+    arcp_release(filter->out);
+undo1:
+    gln_node_destroy(filter);
+undo0:
+    return r;
 }
 
-void smaths_filter_destroy(struct smaths_filter *self) {
-    smaths_parameter_destroy(&self->in);
-    gln_socket_destroy(&self->out);
-    gln_node_destroy(&self->node);
+void smaths_filter_destroy(struct smaths_filter *filter) {
+    arcp_release(filter->in);
+    arcp_release(filter->out);
+    gln_node_destroy(filter);
 }

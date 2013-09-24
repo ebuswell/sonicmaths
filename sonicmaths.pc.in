@@ -4,8 +4,8 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: sonicmaths
-Requires: atomickit, glib-2.0, graphline
+Requires: atomickit, graphline
 Description: Sonic Maths: Modular synthesis with mathematical precision
 Version: @SONICMATHS_VERSION@
-Libs: -latomickit -lglib-2.0 -lpthread -lgraphline -lsonicmaths
+Libs: -latomickit -lpthread -lgraphline -lsonicmaths
 Cflags: -I${includedir}

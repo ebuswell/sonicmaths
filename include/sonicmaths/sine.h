@@ -4,7 +4,7 @@
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -24,9 +24,7 @@
 #ifndef SONICMATHS_SINE_H
 #define SONICMATHS_SINE_H 1
 
-#include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <sonicmaths/synth.h>
 
 /**
@@ -35,14 +33,7 @@
  * See @ref struct smaths_synth
  */
 struct smaths_sine {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
+    struct smaths_synth;
 };
 
 /**
@@ -50,15 +41,15 @@ struct smaths_sine {
  *
  * See @ref smaths_synth_destroy
  */
-static inline void smaths_sine_destroy(struct smaths_sine *sine) {
-    smaths_synth_destroy((struct smaths_synth *) sine);
-}
+#define smaths_sine_destroy smaths_synth_destroy
 
 /**
  * Initialize sine synth
  *
  * See @ref smaths_synth_destroy
  */
-int smaths_sine_init(struct smaths_sine *sine, struct smaths_graph *graph);
+int smaths_sine_init(struct smaths_sine *sine, struct smaths_graph *graph, void (*destroy)(struct smaths_sine *));
+
+struct smaths_sine *smaths_sine_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_SINE_H */

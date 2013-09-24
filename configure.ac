@@ -2,7 +2,7 @@
 # 
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright 2010 Evan Buswell
+# Copyright 2013 Evan Buswell
 # 
 # This file is part of Sonic Maths.
 # 

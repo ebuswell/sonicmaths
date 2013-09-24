@@ -16,7 +16,7 @@ n=1
  * frequency value.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -37,10 +37,9 @@ n=1
 #define SONICMATHS_IMPULSE_TRAIN_H 1
 
 #include <math.h>
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
 #include <sonicmaths/synth.h>
 
 /**
@@ -49,15 +48,8 @@ n=1
  * See @ref struct smaths_synth
  */
 struct smaths_itrain {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
-    atomic_t scale;
+    struct smaths_synth;
+    atomic_bool scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
         * is probably not what you want unless the frequency is
@@ -71,23 +63,23 @@ struct smaths_itrain {
  *
  * See @ref smaths_synth_destroy
  */
-static inline void smaths_itrain_destroy(struct smaths_itrain *itrain) {
-    smaths_synth_destroy((struct smaths_synth *) itrain);
-}
+#define smaths_itrain_destroy smaths_synth_destroy
 
 /**
  * Initialize impulse train synth
  *
  * See @ref smaths_synth_init
  */
-int smaths_itrain_init(struct smaths_itrain *itrain, struct smaths_graph *graph);
+int smaths_itrain_init(struct smaths_itrain *itrain, struct smaths_graph *graph, void (*destroy)(struct smaths_itrain *));
+
+struct smaths_itrain *smaths_itrain_create(struct smaths_graph *graph);
 
 #define M_MNTS 9634303.96f
 #define M_MNTS_NSQR 0.000322173509f
 
-static inline float smaths_itrain_do(float f, float t) {
+static inline float smaths_do_itrain(float f, float t) {
     float n = floorf(1.0f / (2.0f * f)); /* the number of harmonics */
-    float wt_2 = M_PI * t; /* half angular frequency */
+    float wt_2 = ((float) M_PI) * t; /* half angular frequency */
     float m_f = powf(M_MNTS, f);
     float out = sinf(n * wt_2) * cosf((n + 1.0f) * wt_2)
 	/ sinf(wt_2);

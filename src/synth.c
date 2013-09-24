@@ -1,14 +1,13 @@
 /*
  * synth.c
  * 
- * Copyright 2010 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
  * Sonic Maths is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * by the Free Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,68 +18,82 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <math.h>
-#include "sonicmaths/math.h"
+#include <atomickit/atomic-malloc.h>
+#include <graphline.h>
+#include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
 #include "sonicmaths/synth.h"
+#include "mtrand.h"
 
-int smaths_synth_init(struct smaths_synth *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
-    self->graph = graph;
-    self->t = 0.0;
-    int r;
-    r = gln_node_init(&self->node, &graph->graph, func, arg);
+int smaths_synth_init(struct smaths_synth *synth, struct smaths_graph *graph, gln_process_fp_t func, void (*destroy)(struct smaths_synth *)) {
+    int r = -1;
+
+    synth->t = amalloc(sizeof(float));
+    if(synth->t == NULL) {
+	goto undo0;
+    }
+    synth->t[0] = 0.0f;
+    synth->nchannels = 1;
+
+    r = gln_node_init(synth, graph, func, (void (*)(struct gln_node *)) destroy);
     if(r != 0) {
-	return r;
+	goto undo1;
     }
 
-    r = gln_socket_init(&self->out, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
+    synth->out = gln_socket_create(synth, GLNS_OUTPUT);
+    if(synth->out == NULL) {
+	r = -1;
+	goto undo2;
     }
 
-    r = smaths_parameter_init(&self->freq, &self->node, 0.0f);
-    if(r != 0) {
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    synth->freq = smaths_parameter_create(synth, 0.0f);
+    if(synth->freq == NULL) {
+	r = -1;
+	goto undo3;
     }
 
-    r = smaths_parameter_init(&self->phase, &self->node, frandomf());
-    if(r != 0) {
-	smaths_parameter_destroy(&self->freq);
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    synth->phase = smaths_parameter_create(synth, mt_rand_float());
+    if(synth->phase == NULL) {
+	r = -1;
+	goto undo4;
     }
 
-    r = smaths_parameter_init(&self->amp, &self->node, 1.0f);
-    if(r != 0) {
-	smaths_parameter_destroy(&self->phase);
-	smaths_parameter_destroy(&self->freq);
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+    synth->amp = smaths_parameter_create(synth, 1.0f);
+    if(synth->amp == NULL) {
+	r = -1;
+	goto undo5;
     }
 
-    r = smaths_parameter_init(&self->offset, &self->node, 0.0f);
+    synth->offset = smaths_parameter_create(synth, 0.0f);
     if(r != 0) {
-	smaths_parameter_destroy(&self->amp);
-	smaths_parameter_destroy(&self->phase);
-	smaths_parameter_destroy(&self->freq);
-	gln_socket_destroy(&self->out);
-	gln_node_destroy(&self->node);
-	return r;
+	r = -1;
+	goto undo6;
     }
 
     return 0;
+
+undo6:
+    arcp_release(synth->amp);
+undo5:
+    arcp_release(synth->phase);
+undo4:
+    arcp_release(synth->freq);
+undo3:
+    arcp_release(synth->out);
+undo2:
+    gln_node_destroy(synth);
+undo1:
+    afree(synth->t, sizeof(float));
+undo0:
+    return r;
 }
 
-void smaths_synth_destroy(struct smaths_synth *self) {
-    smaths_parameter_destroy(&self->offset);
-    smaths_parameter_destroy(&self->amp);
-    smaths_parameter_destroy(&self->phase);
-    smaths_parameter_destroy(&self->freq);
-    gln_socket_destroy(&self->out);
-    gln_node_destroy(&self->node);
+void smaths_synth_destroy(struct smaths_synth *synth) {
+    arcp_release(synth->offset);
+    arcp_release(synth->amp);
+    arcp_release(synth->phase);
+    arcp_release(synth->freq);
+    arcp_release(synth->out);
+    gln_node_destroy(synth);
+    afree(synth->t, sizeof(float) * synth->nchannels);
 }

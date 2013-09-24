@@ -1,10 +1,6 @@
-/** @file modulator.h
- *
- * Modulator
- *
- * Multiplies its inputs together.
- */
 /*
+ * buffer.c
+ *
  * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
@@ -22,33 +18,16 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_MODULATOR_H
-#define SONICMATHS_MODULATOR_H 1
 
 #include <graphline.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
+#include "sonicmaths/buffer.h"
 
-/**
- * Modulator
- */
-struct smaths_modu {
-    struct gln_node;
-    struct gln_socket *out;
-    struct smaths_parameter *in1;
-    struct smaths_parameter *in2;
-};
-
-/**
- * Destroy modulator
- */
-void smaths_modu_destroy(struct smaths_modu *modu);
-
-/**
- * Initialize modulator
- */
-int smaths_modu_init(struct smaths_modu *modu, struct smaths_graph *graph, void (*destroy)(struct smaths_modu *));
-
-struct smaths_modu *smaths_modu_create(struct smaths_graph *graph);
-
-#endif
+struct smaths_buffer *smaths_alloc_buffer(struct gln_socket *socket, int nframes, int nchannels) {
+    struct smaths_buffer *buffer = gln_alloc_buffer(socket, SMATHS_BUFFER_SIZE(nframes, nchannels));
+    if(buffer == NULL) {
+	return NULL;
+    }
+    buffer->nframes = nframes;
+    buffer->nchannels = nchannels;
+    return buffer;
+}

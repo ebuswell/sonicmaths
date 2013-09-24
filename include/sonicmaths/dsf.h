@@ -48,17 +48,10 @@ n=1
  * See @ref struct smaths_synth
  */
 struct smaths_dsf {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
+    struct smaths_synth;
     struct smaths_parameter bright;
        /** Brightness, from 0-1, see discussion at @ref dsf.h */
-    atomic_t scale;
+    atomic_bool scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
         * is probably not what you want unless the frequency is

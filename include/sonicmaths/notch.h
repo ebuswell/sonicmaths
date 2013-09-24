@@ -8,7 +8,7 @@ H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
  *
  */
 /*
- * Copyright 2012 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -28,45 +28,37 @@ H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_NOTCH_H
 #define SONICMATHS_NOTCH_H 1
 
-#include <atomickit/atomic-types.h>
-#include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/lowpass.h>
+#include <sonicmaths/second-order.h>
 
 /**
  * Notch filter
  *
- * See @ref struct smaths_lowpass
+ * See @ref struct smaths_2order
  */
 struct smaths_notch {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_parameter freq; /** The corner frequency */
-    struct smaths_parameter Q; /** The filter's Q */
-    atomic_float_t atten; /** Attenuation, an alternative to Q */
-    float x1; /** Previous input */
-    float x2; /** Previous previous input */
-    float y1; /** Previous output */
-    float y2; /** Previous previous output */
+    struct smaths_2order;
 };
 
 /**
  * Destroy notch filter
  *
- * See @ref smaths_lowpass_destroy
+ * See @ref smaths_2order_destroy
  */
-static inline void smaths_notch_destroy(struct smaths_notch *notch) {
-    smaths_lowpass_destroy((struct smaths_lowpass *) notch);
-}
+#define smaths_notch_destroy smaths_2order_destroy
 
 /**
  * Initialize notch filter
  *
- * See @ref smaths_lowpass_init
+ * See @ref smaths_2order_init
  */
-int smaths_notch_init(struct smaths_notch *notch, struct smaths_graph *graph);
+int smaths_notch_init(struct smaths_notch *notch, struct smaths_graph *graph, void (*destroy)(struct smaths_notch *));
+
+/**
+ * Create notch filter
+ *
+ * Convenience wrapper for `smaths_notch_init`
+ */
+struct smaths_notch *smaths_notch_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_NOTCH_H */

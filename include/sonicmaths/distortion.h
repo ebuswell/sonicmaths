@@ -39,14 +39,13 @@
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
  * Sonic Maths is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * by the Free Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -60,10 +59,10 @@
 #ifndef SONICMATHS_DISTORTION_H
 #define SONICMATHS_DISTORTION_H 1
 
-#include <atomickit/atomic-types.h>
-#include <graphline.h>
+#include <atomickit/atomic.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
+#include <sonicmaths/filter.h>
 
 /**
  * Distortion filter
@@ -71,13 +70,10 @@
  * See @ref struct smaths_filter
  */
 struct smaths_distort {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_parameter gain;
-    struct smaths_parameter sharpness;
-    atomic_t kind;
+    struct smaths_filter;
+    struct smaths_parameter *gain;
+    struct smaths_parameter *sharpness;
+    atomic_int kind;
 };
 
 /**
@@ -92,11 +88,20 @@ void smaths_distort_destroy(struct smaths_distort *distort);
  *
  * See @ref smaths_filter_init
  */
-int smaths_distort_init(struct smaths_distort *distort, struct smaths_graph *graph);
+int smaths_distort_init(struct smaths_distort *distort, struct smaths_graph *graph, void (*destroy)(struct smaths_distort *));
 
-#define SMATHS_EXP 1
-#define SMATHS_HYP 2
-#define SMATHS_ATAN 3
-#define SMATHS_TUBE 4
+struct smaths_distort *smaths_distort_create(struct smaths_graph *graph);
+
+enum smaths_distortion_kind {
+    SMATHSD_EXP, SMATHSD_HYP, SMATHSD_ATAN
+};
+
+static inline enum smaths_distortion_kind smaths_distort_get_kind(struct smaths_distort *distort) {
+    return atomic_load_explicit(&distort->kind, memory_order_consume);
+}
+
+static inline void smaths_distort_set_kind(struct smaths_distort *distort, enum smaths_distortion_kind kind) {
+    atomic_store_explicit(&distort->kind, kind, memory_order_release);
+}
 
 #endif /* ! SONICMATHS_DISTORTION_H */

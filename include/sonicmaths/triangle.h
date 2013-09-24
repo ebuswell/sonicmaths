@@ -25,7 +25,7 @@ n=1                2
  * 1.0 for all values of @c skew.
  */
 /*
- * Copyright 2012 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -45,10 +45,11 @@ n=1                2
 #ifndef SONICMATHS_TRIANGLE_H
 #define SONICMATHS_TRIANGLE_H 1
 
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
+#include <sonicmaths/synth.h>
 #include <sonicmaths/integrator.h>
 
 /**
@@ -57,26 +58,16 @@ n=1                2
  * See @ref struct smaths_synth
  */
 struct smaths_triangle {
-    struct gln_node node; /** Node for this synth */
-    struct smaths_graph *graph; /** Graph for this synth */
-    struct gln_socket out; /** Output socket */
-    struct smaths_parameter freq; /** Frequency divided by sample rate */
-    struct smaths_parameter amp; /** Amplitude */
-    struct smaths_parameter phase; /** Offset of the cycle from zero */
-    struct smaths_parameter offset; /** Offset of the amplitude from zero */
-    double t; /** Current time offset of the wave */
-    atomic_t scale;
+    struct smaths_synth;
+    struct smaths_parameter *skew;
+    atomic_bool scale;
        /**
         * Whether to scale the bandlimited waveform to 1 or not.  This
         * is probably not what you want unless the frequency is
         * constant.  For manual scaling, note that if a given
         * frequency doesn't clip, no frequency above that will clip.
         */
-    struct smaths_parameter skew; /** Phase offset of the subtracted parabola. */
-    struct smaths_intg_matrix intg11_matrix;
-    struct smaths_intg_matrix intg12_matrix;
-    struct smaths_intg_matrix intg21_matrix;
-    struct smaths_intg_matrix intg22_matrix;
+    struct smaths_intg_matrix *intg_matrix;
 };
 
 /**
@@ -91,6 +82,8 @@ void smaths_triangle_destroy(struct smaths_triangle *triangle);
  *
  * See @ref smaths_synth_init
  */
-int smaths_triangle_init(struct smaths_triangle *triangle, struct smaths_graph *graph);
+int smaths_triangle_init(struct smaths_triangle *triangle, struct smaths_graph *graph, void (*destroy)(struct smaths_triangle *));
+
+struct smaths_triangle *smaths_triangle_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_TRIANGLE_H */

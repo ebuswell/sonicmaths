@@ -24,40 +24,39 @@
 #ifndef SONICMATHS_PARAMETER_H
 #define SONICMATHS_PARAMETER_H 1
 
-#include <math.h>
 #include <atomickit/atomic-float.h>
 #include <graphline.h>
+#include <sonicmaths/buffer.h>
 
 /**
  * A parameter which may be either static or dynamic
  */
 struct smaths_parameter {
-    atomic_float_t value;
-    struct gln_socket p_static;
-    struct gln_socket p_dynamic;
+    struct gln_socket;
+    atomic_float value;
 };
 
-int smaths_parameter_init(struct smaths_parameter *p, struct gln_node *node, float value);
+int smaths_parameter_init(struct smaths_parameter *parameter, struct gln_node *node, float value, void (*destroy)(struct smaths_parameter *));
 
-void smaths_parameter_destroy(struct smaths_parameter *p);
+#define smaths_parameter_destroy gln_socket_destroy
 
-float *smaths_parameter_get_buffer(struct smaths_parameter *p);
+struct smaths_parameter *smaths_parameter_create(struct gln_node *node, float value);
 
-static inline void smaths_parameter_set(struct smaths_parameter *p, float value) {
-    atomic_float_set(&p->value, value);
+static inline void smaths_parameter_set(struct smaths_parameter *parameter, float value) {
+    atomic_float_store_explicit(&parameter->value, value, memory_order_release);
 }
 
-static inline float smaths_parameter_get(struct smaths_parameter *p) {
-    return atomic_float_read(&p->value);
+static inline float smaths_parameter_get(struct smaths_parameter *parameter) {
+    return atomic_float_load_explicit(&parameter->value, memory_order_acquire);
 }
 
-static inline int smaths_parameter_connect(struct smaths_parameter *p, struct gln_socket *other) {
-    int r = gln_socket_connect(&p->p_dynamic, other);
-    if(r != 0) {
-	return r;
+static inline float smaths_parameter_go(struct smaths_parameter *parameter, struct smaths_buffer *buffer) {
+    if(buffer != NULL) {
+	float ret = buffer->data[buffer->nchannels * (buffer->nframes - 1)];
+	smaths_parameter_set(parameter, ret);
+	return ret;
     }
-    atomic_float_set(&p->value, NAN);
-    return 0;
+    return smaths_parameter_get(parameter);
 }
 
 #endif /* ! SONICMATHS_PARAMETER_H */

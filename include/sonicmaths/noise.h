@@ -4,7 +4,7 @@
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -24,9 +24,15 @@
 #ifndef SONICMATHS_NOISE_H
 #define SONICMATHS_NOISE_H 1
 
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
+#include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
+
+enum smaths_noise_kind {
+    SMATHSN_GAUSSIAN,
+    SMATHSN_UNIFORM
+};
 
 /**
  * Noise Generator
@@ -35,13 +41,11 @@
  * subclass since there's no @p freq input.
  */
 struct smaths_noise {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out;
-    struct smaths_parameter amp;
-    struct smaths_parameter offset;
-    atomic_t kind; /** pink, white, or red */
-    float state[3]; /** state information for the pink noise generator */
+    struct gln_node;
+    struct gln_socket *out;
+    struct smaths_parameter *amp;
+    struct smaths_parameter *offset;
+    atomic_int kind; /** gaussian, uniform, tick, */
 };
 
 /**
@@ -52,10 +56,16 @@ void smaths_noise_destroy(struct smaths_noise *noise);
 /**
  * Initialize noise generator
  */
-int smaths_noise_init(struct smaths_noise *noise, struct smaths_graph *graph);
+int smaths_noise_init(struct smaths_noise *noise, struct smaths_graph *graph, void (*destroy)(struct smaths_noise *));
 
-#define SMATHS_WHITE 1
-#define SMATHS_PINK 2
-#define SMATHS_RED 3
+struct smaths_noise *smaths_noise_create(struct smaths_graph *graph);
+
+static inline void smaths_noise_set_kind(struct smaths_noise *noise, enum smaths_noise_kind kind) {
+    atomic_store_explicit(&noise->kind, kind, memory_order_release);
+}
+
+static inline enum smaths_noise_kind smaths_noise_get_kind(struct smaths_noise *noise) {
+    return atomic_load_explicit(&noise->kind, memory_order_consume);
+}
 
 #endif

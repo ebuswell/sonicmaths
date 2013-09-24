@@ -8,7 +8,7 @@ H(s) = 1 / (s^2 + s/Q + 1)
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -28,60 +28,37 @@ H(s) = 1 / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_LOWPASS_H
 #define SONICMATHS_LOWPASS_H 1
 
-#include <atomickit/atomic-types.h>
-#include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
+#include <sonicmaths/second-order.h>
 
 /**
  * Lowpass filter
  *
- * See @ref struct smaths_filter
+ * See @ref struct smaths_2order
  */
 struct smaths_lowpass {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_parameter freq; /** The corner frequency */
-    struct smaths_parameter Q; /** The filter's Q */
-    atomic_float_t atten; /** Attenuation, an alternative to Q */
-    float x1; /** Previous input */
-    float x2; /** Previous previous input */
-    float y1; /** Previous output */
-    float y2; /** Previous previous output */
+    struct smaths_2order;
 };
 
 /**
  * Destroy lowpass filter
  *
- * See @ref smaths_filter_destroy
+ * See @ref smaths_2order_destroy
  */
-void smaths_lowpass_destroy(struct smaths_lowpass *lowpass);
-
-/**
- * Initialize lowpass filter, for subclasses
- *
- * See @ref smaths_filter_init
- */
-int smaths_lowpass_subclass_init(struct smaths_lowpass *lowpass, struct smaths_graph *graph, gln_process_fp_t func, void *arg);
+#define smaths_lowpass_destroy smaths_2order_destroy
 
 /**
  * Initialize lowpass filter
  *
- * See @ref smaths_filter_init
+ * See @ref smaths_2order_init
  */
-int smaths_lowpass_init(struct smaths_lowpass *lowpass, struct smaths_graph *graph);
+int smaths_lowpass_init(struct smaths_lowpass *lowpass, struct smaths_graph *graph, void (*destroy)(struct smaths_lowpass *));
 
 /**
- * Set filter attenuation
+ * Create lowpass filter
  *
- * You can either use atten or Q; not both.  Q = w/2a
- *
- * Ruby version: @c atten=
-
-void cs_lowpass_set_atten(cs_lowpass_t *self, float atten);
-
+ * Convenience wrapper for `smaths_lowpass_init`
  */
+struct smaths_lowpass *smaths_lowpass_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_LOWPASS_H */

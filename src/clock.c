@@ -1,12 +1,13 @@
 /*
- * Copyright 2011 Evan Buswell
+ * clock.c
+ *
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
  * Sonic Maths is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * by the Free Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,50 +22,116 @@
 #include <graphline.h>
 #include "sonicmaths/graph.h"
 #include "sonicmaths/parameter.h"
+#include "somicmaths/buffer.h"
 #include "sonicmaths/clock.h"
 
-static int smaths_clock_process(struct smaths_clock *self) {
-    float *clock_buffer = gln_socket_get_buffer(&self->clock);
+static int smaths_clock_process(struct smaths_clock *clock) {
+    int r, i, j;
+
+    struct smaths_buffer *rate_buffer;
+
+    r = gln_get_buffers(1, &clock->rate, &rate_buffer);
+    if(r != 0) {
+	return r;
+    }
+
+    float rate = smaths_parameter_go(&clock->rate, rate_buffer);
+
+    int nframes = smaths_graph_frames_per_period((struct smaths_graph *) clock->graph);
+
+    int nchannels = rate_buffer == NULL ? 1 : rate_buffer->nchannels;
+
+    if(nchannels != clock->nchannels) {
+	float *t = arealloc(clock->t, sizeof(float) * clock->nchannels,
+			    sizeof(float) * nchannels);
+	if(t == NULL) {
+	    return -1;
+	}
+	if(clock->nchannels < nchannels) {
+	    memset(clock->t + clock->nchannels, 0, sizeof(float) * (nchannels - clock->nchannels));
+	}
+	clock->t = t;
+	clock->nchannels = nchannels;
+    }
+
+    struct smaths_buffer *clock_buffer = smaths_alloc_buffer(&clock->clock, nframes, nchannels);
     if(clock_buffer == NULL) {
 	return -1;
     }
-    float *rate_buffer = smaths_parameter_get_buffer(&self->rate);
-    if(clock_buffer == NULL) {
-	return -1;
+
+    for(i = 0; i < nframes; i++) {
+	for(j = 0; j < nchannels; j++) {
+	    clock_buffer->data[i * nchannels + j] = self->current[j];
+	    self->current[j] += smaths_value(rate_buffer, i, j, rate);
+	}
     }
-    size_t i;
-    for(i = 0; i < self->graph->graph.buffer_nmemb; i++) {
-	clock_buffer[i] = (float) self->current;
-	self->current += (double) rate_buffer[i];
-    }
+
     return 0;
 }
 
-int smaths_clock_init(struct smaths_clock *self, struct smaths_graph *graph) {
-    self->current = 0.0;
-    self->graph = graph;
+int smaths_clock_init(struct smaths_clock *clock, struct smaths_graph *graph, void (*destroy)(struct smaths_clock *clock)) {
+    int r = -1;
 
+    clock->t = amalloc(sizeof(float));
+    if(clock->t == NULL) {
+	goto undo0;
+    }
+    clock->t[0] = 0.0f;
+
+    r = gln_node_init(clock, graph, (gln_process_fp_t) smaths_clock_process, (void (*)(struct gln_node *)) smaths_clock_destroy);
+    if(r != 0) {
+	goto undo1;
+    }
+
+    clock->clock = gln_socket_create(clock, GLNS_OUTPUT);
+    if(clock->clock == NULL) {
+	r = -1;
+	goto undo2;
+    }
+
+    clock->rate = smaths_parameter_init(clock, 0.0f);
+    if(r != 0) {
+	r = -1;
+	goto undo3;
+    }
+
+    return 0;
+
+undo3:
+    arcp_release(clock->clock);
+undo2:
+    gln_node_destroy(clock);
+undo1:
+    afree(clock->t, sizeof(float));
+undo0:
+    return r;
+}
+
+void smaths_clock_destroy(struct smaths_clock *clock) {
+    arcp_release(clock->clock);
+    arcp_release(clock->rate);
+    afree(clock->t, sizeof(float) * clock->nchannels);
+    gln_node_destroy(&clock->node);
+}
+
+static void __smaths_clock_destroy(struct smaths_clock *clock) {
+    smaths_clock_destroy(clock);
+    afree(clock, sizeof(struct smaths_clock));
+}
+
+struct smaths_clock *smaths_clock_create(struct smaths_graph *graph) {
     int r;
-    r = gln_node_init(&self->node, &self->graph->graph, (gln_process_fp_t) smaths_clock_process, self);
-    if(r != 0) {
-	return r;
-    }
-    r = gln_socket_init(&self->clock, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
-    }
-    r = smaths_parameter_init(&self->rate, &self->node, 0.0f);
-    if(r != 0) {
-	gln_socket_destroy(&self->clock);
-	gln_node_destroy(&self->node);
-	return r;
-    }
-    return 0;
-}
 
-void smaths_clock_destroy(struct smaths_clock *self) {
-    smaths_parameter_destroy(&self->rate);
-    gln_socket_destroy(&self->clock);
-    gln_node_destroy(&self->node);
+    struct smaths_clock *clock = amalloc(sizeof(struct smaths_clock));
+    if(clock == NULL) {
+	return NULL;
+    }
+
+    r = smaths_clock_init(clock, graph, __smaths_clock_destroy);
+    if(r != 0) {
+	afree(clock, sizeof(struct smaths_clock));
+	return NULL;
+    }
+
+    return clock;
 }

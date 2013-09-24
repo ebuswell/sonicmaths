@@ -5,7 +5,7 @@
  *
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -26,8 +26,7 @@
 #define SONICMATHS_JBRIDGE_H 1
 
 #include <jack/jack.h>
-#include <atomickit/atomic-types.h>
-#include <atomickit/atomic-list.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 
@@ -35,20 +34,14 @@
  * Bridge to JACK
  */
 struct smaths_jbridge {
-    struct smaths_graph graph;
+    struct smaths_graph;
     jack_client_t *client;
-    atomic_t portnum;
-    atomic_list_t untied_ports;
+    atomic_int portnum;
 };
 
 struct smaths_jbridge_socketpair {
-    struct gln_socket socket;
+    struct gln_socket;
     jack_port_t *port;
-};
-
-struct smaths_jbridge_untied_port {
-    JackProcessCallback cb;
-    void *arg;
 };
 
 /**
@@ -56,7 +49,7 @@ struct smaths_jbridge_untied_port {
  *
  * @returns @c 0 on success, nonzero otherwise.
  */
-int smaths_jbridge_destroy(struct smaths_jbridge *jbridge);
+void smaths_jbridge_destroy(struct smaths_jbridge *jbridge);
 
 /**
  * Initialize JACK Bridge
@@ -66,7 +59,9 @@ int smaths_jbridge_destroy(struct smaths_jbridge *jbridge);
  *
  * @returns @c 0 on success, nonzero otherwise.
  */
-int smaths_jbridge_init(struct smaths_jbridge *jbridge, const char *client_name, jack_options_t flags, jack_status_t *status, char *server_name);
+int smaths_jbridge_init(struct smaths_jbridge *jbridge, const char *client_name, jack_options_t flags, jack_status_t *status, char *server_name, void (*destroy)(struct smaths_jbridge *));
+
+struct smaths_jbridge *smaths_jbridge_create(const char *client_name, jack_options_t flags, jack_status_t *status, char *server_name);
 
 /**
  * Creates a @ref gln_socket and a corresponding @c jack_port_t
@@ -81,6 +76,22 @@ int smaths_jbridge_init(struct smaths_jbridge *jbridge, const char *client_name,
  *
  * @returns @c 0 on success, nonzero otherwise
  */
-int smaths_jbridge_create_socket(struct smaths_jbridge *jbridge, enum gln_socket_direction direction, struct gln_socket **out_socket, jack_port_t **out_port);
+int smaths_jbridge_create_socket(struct smaths_jbridge *jbridge, enum gln_socket_direction direction, struct gln_socket **socket, jack_port_t **port);
+
+/**
+ * Creates a @ref gln_socket and a corresponding @c jack_port_t for
+ * communication of midi data
+ *
+ * @p direction indicates whether the socket can be used to write to
+ * JACK (@c OUTPUT) or read from JACK (@c INPUT).  Note that the
+ * socket which is created to correspond with the JACK port is always
+ * of the opposite type.
+ *
+ * @p socket and @p port, if not null, will be filled with pointers to
+ * the created socket and port.
+ *
+ * @returns @c 0 on success, nonzero otherwise
+ */
+int smaths_jbridge_create_midi_socket(struct smaths_jbridge *jbridge, enum gln_socket_direction direction, struct gln_socket **socket, jack_port_t **port);
 
 #endif

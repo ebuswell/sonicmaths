@@ -5,16 +5,16 @@
  * Creates an envelope corresponding to a control signal.
  *
  * @verbatim
-           _ attack_a
-        _-- \
-      --     \
-    /          \________ sustain_a
-   /                    \
- /                       \
-/                          \
-release_a                   release_a
-|__________|___|       |___|
- attack_t   decay_t     release_t
+       __ attack_a
+    _--  \
+   -      \
+  /         \________ sustain_a
+ /                   \
+/                     \
+|                       \
+release_a                release_a
+|________|___|       |___|
+ attack_t  decay_t    release_t
 @endverbatim
  *
  * The bad ascii art is trying to illustrate the default exponential version.
@@ -37,14 +37,13 @@ release_a                   release_a
  * @todo parameterize a forced release.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
  * Sonic Maths is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * by the Free Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -59,7 +58,7 @@ release_a                   release_a
 #define SONICMATHS_ENVELOPE_GENERATOR_H 1
 
 #include <stdbool.h>
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic.h>
 #include <graphline.h>
 #include <sonicmaths/graph.h>
 #include <sonicmaths/parameter.h>
@@ -67,34 +66,38 @@ release_a                   release_a
 /**
  * Envelope Generator State
  */
-enum smaths_envg_state {
-    ATTACK,
-    DECAY,
-    SUSTAIN,
-    RELEASE,
-    FINISHED
+enum smaths_envg_stage {
+    ENVG_ATTACK,
+    ENVG_DECAY,
+    ENVG_SUSTAIN,
+    ENVG_RELEASE,
+    ENVG_FINISHED
+};
+
+struct smaths_envg_state {
+    enum smaths_envg_stage stage;
+    float y1;
+    float t;
+    bool release;
 };
 
 /**
  * Envelope Generator
  */
 struct smaths_envg {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket ctl; /** Input control data */
-    struct gln_socket out; /** Output */
-    struct smaths_parameter attack_t; /** Attack time */
-    struct smaths_parameter attack_a; /** Attack amplitude */
-    struct smaths_parameter decay_t; /** Decay time */
-    struct smaths_parameter sustain_a; /** Sustain amplitude */
-    struct smaths_parameter release_t; /** Release time */
-    struct smaths_parameter release_a; /** Release amplitude */
-    atomic_t linear; /** Whether it's linear or exponential */
+    struct gln_node;
+    struct gln_socket *ctl; /** Input control data */
+    struct gln_socket *out; /** Output */
+    struct smaths_parameter *attack_t; /** Attack time */
+    struct smaths_parameter *attack_a; /** Attack amplitude */
+    struct smaths_parameter *decay_t; /** Decay time */
+    struct smaths_parameter *sustain_a; /** Sustain amplitude */
+    struct smaths_parameter *release_t; /** Release time */
+    struct smaths_parameter *release_a; /** Release amplitude */
+    atomic_bool linear; /** Whether it's linear or exponential */
 
-    enum smaths_envg_state state; /** Keeps track of the state */
-    float last_a; /** The last value we saw */
-    bool release; /** Whether we should release when it's apropos */
-    bool upwards; /** Keeps track of which direction we're going */
+    int nchannels;
+    struct smaths_envg_state *envg_state; /** Keeps track of the state */
 };
 
 /**
@@ -105,6 +108,8 @@ void smaths_envg_destroy(struct smaths_envg *envg);
 /**
  * Initialize envelope generator
  */
-int smaths_envg_init(struct smaths_envg *envg, struct smaths_graph *graph);
+int smaths_envg_init(struct smaths_envg *envg, struct smaths_graph *graph, void (*destroy)(struct smaths_envg *));
+
+struct smaths_envg *smaths_envg_create(struct smaths_graph *graph);
 
 #endif

@@ -1,14 +1,13 @@
 /*
  * controller.c
  * 
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
  * Sonic Maths is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * by the Free Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,36 +18,43 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
+
+#include <atomickit/atomic-rcp.h>
 #include <graphline.h>
 #include "sonicmaths/graph.h"
 #include "sonicmaths/controller.h"
 
-int smaths_ctlr_init(struct smaths_ctlr *self, struct smaths_graph *graph, gln_process_fp_t func, void *arg) {
+int smaths_ctlr_init(struct smaths_ctlr *ctlr, struct smaths_graph *graph, gln_process_fp_t func, void (*destroy)(struct smaths_ctlr *)) {
     int r;
-    self->graph = graph;
-    r = gln_node_init(&self->node, &graph->graph, func, arg);
+    r = gln_node_init(ctlr, graph, func, (void (*)(struct gln_node *)) destroy);
     if(r != 0) {
-	return r;
+	goto undo0;
     }
 
-    r = gln_socket_init(&self->ctl, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_node_destroy(&self->node);
-	return r;
+    ctlr->ctl = gln_socket_create(ctlr, GLNS_OUTPUT);
+    if(ctlr->ctl == NULL) {
+	r = -1;
+	goto undo1;
     }
 
-    r = gln_socket_init(&self->out, &self->node, OUTPUT);
-    if(r != 0) {
-	gln_socket_destroy(&self->ctl);
-	gln_node_destroy(&self->node);
-	return r;
+    ctlr->out = gln_socket_create(ctlr, GLNS_OUTPUT);
+    if(ctlr->out == NULL) {
+	r = -1;
+	goto undo2;
     }
 
     return 0;
+
+undo2:
+    arcp_release(ctlr->ctl);
+undo1:
+    gln_node_destroy(ctlr);
+undo0:
+    return r;
 }
 
-void smaths_ctlr_destroy(struct smaths_ctlr *self) {
-    gln_socket_destroy(&self->out);
-    gln_socket_destroy(&self->ctl);
-    gln_node_destroy(&self->node);
+void smaths_ctlr_destroy(struct smaths_ctlr *ctlr) {
+    arcp_release(ctlr->out);
+    arcp_release(ctlr->ctl);
+    gln_node_destroy(ctlr);
 }

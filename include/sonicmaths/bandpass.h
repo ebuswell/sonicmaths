@@ -8,7 +8,7 @@ H(s) = (s/Q) / (s^2 + s/Q + 1)
  *
  */
 /*
- * Copyright 2012 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -28,45 +28,37 @@ H(s) = (s/Q) / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_BANDPASS_H
 #define SONICMATHS_BANDPASS_H 1
 
-#include <atomickit/atomic-types.h>
-#include <graphline.h>
 #include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/lowpass.h>
+#include <sonicmaths/second-order.h>
 
 /**
  * Bandpass filter
  *
- * See @ref struct smaths_lowpass
+ * See @ref struct smaths_2order
  */
 struct smaths_bandpass {
-    struct gln_node node;
-    struct smaths_graph *graph;
-    struct gln_socket out; /** Output */
-    struct smaths_parameter in; /** Input */
-    struct smaths_parameter freq; /** The corner frequency */
-    struct smaths_parameter Q; /** The filter's Q */
-    atomic_float_t atten; /** Attenuation, an alternative to Q */
-    float x1; /** Previous input */
-    float x2; /** Previous previous input */
-    float y1; /** Previous output */
-    float y2; /** Previous previous output */
+    struct smaths_2order;
 };
 
 /**
  * Destroy bandpass filter
  *
- * See @ref smaths_lowpass_destroy
+ * See @ref smaths_2order_destroy
  */
-static inline void smaths_bandpass_destroy(struct smaths_bandpass *bandpass) {
-    smaths_lowpass_destroy((struct smaths_lowpass *) bandpass);
-}
+#define smaths_bandpass_destroy smaths_2order_destroy
 
 /**
  * Initialize bandpass filter
  *
- * See @ref smaths_lowpass_init
+ * See @ref smaths_2order_init
  */
-int smaths_bandpass_init(struct smaths_bandpass *bandpass, struct smaths_graph *graph);
+int smaths_bandpass_init(struct smaths_bandpass *bandpass, struct smaths_graph *graph, void (*destroy)(struct smaths_bandpass *));
+
+/**
+ * Create bandpass filter
+ *
+ * Convenience wrapper for `smaths_bandpass_init`
+ */
+struct smaths_bandpass *smaths_bandpass_create(struct smaths_graph *graph);
 
 #endif /* ! SONICMATHS_BANDPASS_H */

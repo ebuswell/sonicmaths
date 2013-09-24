@@ -6,7 +6,7 @@
  * play notes.  Mostly useful to test things out.
  */
 /*
- * Copyright 2011 Evan Buswell
+ * Copyright 2013 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
@@ -26,7 +26,7 @@
 #ifndef SONICMATHS_INSTRUMENT_H
 #define SONICMATHS_INSTRUMENT_H 1
 
-#include <atomickit/atomic-types.h>
+#include <atomickit/atomic-float.h>
 #include <graphline.h>
 #include <sonicmaths/controller.h>
 #include <sonicmaths/graph.h>
@@ -37,12 +37,24 @@
  * See @ref struct smaths_ctlr
  */
 struct smaths_inst {
-    struct gln_node node; /** Node for this controller */
-    struct smaths_graph *graph; /** Graph for this controller */
-    struct gln_socket out; /** Output */
-    struct gln_socket ctl; /** Output control */
-    atomic_float_t out_v; /** The current output value */
-    atomic_float_t ctl_v; /** The current control value */
+    struct smaths_ctlr;
+    atomic_int user_nchannels;
+    int nchannels;
+    float *out_v;
+    int *channels_lru_start;
+    int *channels_lru_stop;
+    aqueue_t cmd_queue;
+};
+
+enum smaths_inst_cmd {
+    SMATHSIC_START,
+    SMATHSIC_STOP
+};
+
+struct smaths_inst_cmd_s {
+    struct arcp_region;
+    enum smaths_inst_cmd cmd;
+    float value;
 };
 
 /**
@@ -50,32 +62,41 @@ struct smaths_inst {
  *
  * See @ref smaths_ctlr_destroy
  */
-static inline void smaths_inst_destroy(struct smaths_inst *inst) {
-    smaths_ctlr_destroy((struct smaths_ctlr *) inst);
-}
+void smaths_inst_destroy(struct smaths_inst *inst);
 
 /**
  * Initialize instrument
  *
  * See @ref smaths_ctlr_init
  */
-int smaths_inst_init(struct smaths_inst *inst, struct smaths_graph *graph);
+int smaths_inst_init(struct smaths_inst *inst, struct smaths_graph *graph, void (*destroy)(struct smaths_inst *));
+
+struct smaths_inst *smaths_inst_create(struct smaths_graph *graph);
+
+int smaths_inst_cmd(struct smaths_inst *inst, float value, enum smaths_inst_cmd cmd);
 
 /**
  * Play a note
  *
  * @param value the note to play.
  */
-static inline void smaths_inst_play(struct smaths_inst *self, float value) {
-    atomic_float_set(&self->out_v, value);
-    atomic_float_set(&self->ctl_v, 1.0f);
+static inline int smaths_inst_play(struct smaths_inst *inst, float value) {
+    return smaths_inst_cmd(inst, value, SMATHSIC_START);
 }
 
 /**
- * Stop playing
+ * Stop playing a note
  */
-static inline void smaths_inst_stop(struct smaths_inst *self) {
-    atomic_float_set(&self->ctl_v, -1.0f);
+static inline int smaths_inst_stop(struct smaths_inst *inst, float value) {
+    return smaths_inst_cmd(inst, value, SMATHSIC_STOP);
+}
+
+static inline int smaths_inst_get_nchannels(struct smaths_inst *inst) {
+    return atomic_load_explicit(&inst->user_nchannels, memory_order_acquire);
+}
+
+static inline void smaths_inst_set_nchannels(struct smaths_inst *inst, int nchannels) {
+    return atomic_store_explicit(&inst->user_nchannels, nchannels, memory_order_release);
 }
 
 #endif /* ! SONICMATHS_INSTRUMENT_H */
