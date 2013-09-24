@@ -732,7 +732,7 @@ int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) 
     /* sleep(1); */
     /* OK(); */
 
-    smaths_parameter_set(mix_in1_amp, 0.125f);
+    smaths_parameter_set(mix_in1_amp, 0.0625f);
 
     CHECKING(smaths_integrator_create);
     struct smaths_integrator *integrator = smaths_integrator_create(bridge);

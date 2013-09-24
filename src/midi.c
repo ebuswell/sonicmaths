@@ -157,7 +157,7 @@ static inline void smaths_midi_note_on(struct smaths_midi_ctlr *ctlr, struct sma
 		}
 	    }
 	    if(i == nvoices) {
-		printf("Voice was stopped\n", i);
+		printf("Voice was stopped\n");
 		/* The voice must be currently stopped */
 		for(i = 0; ctlr->voices_lru_stop[i] != voice; i++);
 		printf("Voice found in stop queue at %d\n", i);
