@@ -1,12 +1,14 @@
-Cshellsynth is a library for synthesizing sound using the Jack Audio Connection Kit on
-Linux.  It optionally includes a module for ruby suitable for livecoding.
+Sonic Maths is a library for modular synthesis on Linux. The eventual
+aim is that it will be suitable for livecoding.
 
-This depends on libsndfile and jack.  libsndfile could be made optional, but this hasn't
-yet been done.
+This depends on libsndfile and jack. libsndfile could be made
+optional, but this hasn't yet been done. Actually, libsndfile isn't
+even used, but it will be soon. Just install it. This is alpha
+software...
 
-For Jack, see http://jackaudio.org.  I highly recommend version 2 or later.  Version 1
-compiles, but doesn't seem to deal well with the extremely large number of clients your
-program will no doubt generate.
+For Jack, see http://jackaudio.org. I would recommend version 2, but
+I'd be interested in hearing about it working better or worse with
+version 1.
 
 For libsndfile, see http://www.mega-nerd.com/libsndfile/
 
@@ -22,54 +24,64 @@ modifications.
 
 Some questions that have never been asked of me:
 
-How stable is Cshellsynth?
+How stable is Sonic Maths?
 
-Right now, Cshellsynth is in alpha.  However, mostly that just means that the API is not
-completely stable.  If you compile against Cshellsynth and don't upgrade it, it should be
-pretty stable.  However, if you do find a bug and the API has been changed, don't expect
-me to back-port changes for you, though you should be able to do it yourself with a git
-changeset.
+Right now, Sonic Maths is in alpha. Mostly that just means that the
+API is not completely stable.
 
 Where can I send a bug report?
 
-Please use the git project page at http://github.com/ebuswell/Cshellsynth/issues
+Please use the git project page at http://github.com/ebuswell/sonicmaths/issues
 
-I don't understand ruby or C.  Will you make a GUI for Cshellsynth?
+I don't understand C.  Will you make a GUI for Sonic Maths?
 
-No.  Cshellsynth was always intended to be textual.  On the other hand, I would be happy
-to include modules for other languages, if anyone wants to write one.
+No. My interest in Sonic Maths has to do with its full programmability
+and textual format. I'm far more likely to spend time making the API
+more usable than to put a GUI on top of it. On the other hand, I would
+be happy to include modules for higher-level languages, if anyone
+wants to write one. OTOH, if you'd like to make a GUI, great! As
+always, contact me and I can give guidance and help on these sorts of
+projects.
 
 Will you include feature x?
 
-If you write it and it's simple and mathematically generic enough, yes.  If it is not very
-generic (e.g. modeling a particular analog synth), write it as a separate library, and I
-will be happy to link to it on the site.  Since this project uses jack, and jack has a
-dssi "rack" (jackrack), there's multiple ways of doing this.
+If you write it and it's simple and mathematically generic enough,
+yes. If it is not very generic (e.g. modeling a particular analog
+synth), write it as a separate library, and I will be happy to link to
+it on the site. Since this project uses jack, and jack has a dssi
+"rack" (jackrack), there's multiple ways of doing this.
 
-If you want something that seems obvious, but don't have time to write it, send a request.
-I may not implement it, but it doesn't hurt to ask.
+If you want something that seems obvious, but don't have time to write
+it, send a request. I may not implement it, but it doesn't hurt to
+ask.
 
-What does Cshellsynth stand for?
+What's with the name, Sonic Maths?
 
-When I came up with the name, I was thinking of writing a domain-specific language for
-livecoding.  "cshell" then would stand for "C SHimple Enterface LLanguage."  Instead, we
-have ruby, and so "cshell" stands for those lovely things that wash up on the beach.  This
-is probably just as well, as the humor of a grossly misspelled acronym might be mistaken
-for an incompetent or nonparticipatory move in the acronym game, beloved by software
-engineers everywhere.
+The idea of this project is not so much analog modeling, but
+mathematical simplicity. I'm not interested in matching either
+electronic circuits, real-world sounds, nor in doing something in a
+very DSP-ish way (e.g. reverb with comb filters). I guess the idea
+might be best described as "continuum-modeling." I decided on "maths"
+(the British abbreviation) instead of "math" because I like the idea
+that "math" could be plural. It certainly seems that way when
+translating from continuous to discrete mathematics and then back over
+and over again, inevitably drowning in the frequency/time aporia,
+everything getting foggy and trancendental functions sprouting up like
+mushrooms. After you've abandoned naïve hopes and become reconciled to
+this impenetrable fogginess, the roots of mathematics couldn't
+possibly be other than many things.
 ----------------------------------------------------------------------
 
-Cshellsynth is Copyright 2010 Evan Buswell
+Sonic Maths is Copyright 2013 Evan Buswell
 
-Cshellsynth is free software: you can redistribute it and/or modify
+Sonic Maths is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
+the Free Software Foundation, version 2.
 
-Cshellsynth is distributed in the hope that it will be useful,
+Sonic Maths is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Cshellsynth.  If not, see <http://www.gnu.org/licenses/>.
+along with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
