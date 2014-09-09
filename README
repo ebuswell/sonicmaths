@@ -1,24 +1,23 @@
 Sonic Maths is a library for modular synthesis on Linux. The eventual
 aim is that it will be suitable for livecoding.
 
-This depends on libsndfile and jack. libsndfile could be made
-optional, but this hasn't yet been done. Actually, libsndfile isn't
-even used, but it will be soon. Just install it. This is alpha
-software...
+Requirements
+------------
+This depends on atomickit, graphline, and jack. At the moment, atomickit and
+graphline should be the latest git.
 
 For Jack, see http://jackaudio.org. I would recommend version 2, but
 I'd be interested in hearing about it working better or worse with
 version 1.
 
-For libsndfile, see http://www.mega-nerd.com/libsndfile/
+Installation
+------------
+Link config.def.mk to config.mk, or copy config.def.mk to config.mk and edit
+to match your local setup (this is installed under /usr/local by default).
+Then enter the following commands:
 
-See the file `INSTALL' for generic instructions on how to compile and
-install this software.
-
-See the file `NEWS' for late-breaking news about this version.
-
-See the file `ChangeLog' for an up-to-date list of source-level
-modifications.
+	make
+	sudo make install
 
 ----------------------------------------------------------------------
 

@@ -1,11 +1,11 @@
 prefix=@prefix@
-exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
 Name: sonicmaths
-Requires: atomickit, graphline
+Requires: atomickit, graphline, jack
 Description: Sonic Maths: Modular synthesis with mathematical precision
-Version: @SONICMATHS_VERSION@
-Libs: -latomickit -lpthread -lgraphline -lsonicmaths
-Cflags: -I${includedir}
+Version: @version@
+Libs: -L${libdir} -lpthread -lsonicmaths
+Libs.private: ${libdir}/libsonicmaths.a
+Cflags: -fplan9-extensions -I${includedir}
