@@ -2,12 +2,11 @@
  *
  * Implements a simple integrator.
  *
- * This takes the integral as if the sampled point output was
- * reconstructed through a windowed sinc function (Blackman seems to
- * work best) 9 samples wide---therefore there's a 4 1/2 sample delay.
- * This is then integrated and sampled with no filtering
- * (theoretically unnecessary).  The integrator is "leaky," so that DC
- * should not be introduced.
+ * This takes the integral as if the sampled point output was reconstructed
+ * through a windowed sinc function (Blackman seems to work best) 9 samples
+ * wide---therefore there's a 4 1/2 sample delay. This is then integrated and
+ * sampled with no filtering (theoretically unnecessary).  The integrator is
+ * "leaky," so that DC should not be introduced.
  *
  * @verbatim
 y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
@@ -20,70 +19,97 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
  * 
  * This file is part of Sonic Maths.
  * 
- * Sonic Maths is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 2 of the License,
- * or (at your option) any later version.
+ * Sonic Maths is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 2 of the License, or (at your option)
+ * any later version.
  * 
- * Sonic Maths is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  * 
- * You should have received a copy of the GNU General Public License
- * along with Sonic Maths.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef SONICMATHS_INTEGRATOR_H
 #define SONICMATHS_INTEGRATOR_H 1
 
+#include <math.h>
 #include <float.h>
-#include <graphline.h>
-#include <sonicmaths/graph.h>
-#include <sonicmaths/parameter.h>
-#include <sonicmaths/filter.h>
+#include <atomickit/rcp.h>
 
 /**
  * Integration filter matrix
  */
-struct smaths_intg_matrix {
-    float y1;
-    float x1;
-    float x2;
-    float x3;
-    float x4;
-    float x5;
-    float x6;
-    float x7;
-    float x8;
+struct smintg_matrix {
+	float y1;
+	float x1;
+	float x2;
+	float x3;
+	float x4;
+	float x5;
+	float x6;
+	float x7;
+	float x8;
 };
 
 /**
  * Integration filter
- *
- * See @ref struct smaths_filter
  */
-struct smaths_integrator {
-    struct smaths_filter;
-    int nchannels;
-    struct smaths_intg_matrix *intg_matrix;
+struct smintg {
+	struct arcp_region;
+	int nchannels;
+	struct smintg_matrix *matrix;
 };
 
 /**
- * Destroy integration filter
- *
- * See @ref smaths_filter_destroy
+ * Initialize integration filter
  */
-void smaths_integrator_destroy(struct smaths_integrator *integrator);
+int smintg_init(struct smintg *intg, void (*destroy)(struct smintg *));
 
 /**
- * Initialize integration filter
- *
- * See @ref smaths_filter_init
+ * Destroy integration filter
  */
-int smaths_integrator_init(struct smaths_integrator *integrator, struct smaths_graph *graph, void (*destroy)(struct smaths_integrator *));
+void smintg_destroy(struct smintg *intg);
 
-struct smaths_integrator *smaths_integrator_create(struct smaths_graph *graph);
+/**
+ * Create integration filter
+ */
+struct smintg *smintg_create(void);
+
+/**
+ * Redim the integrator state based on number of channels.
+ */
+static inline int smintg_redim(struct smintg *intg, int nchannels) {
+	if(nchannels != intg->nchannels) {
+		int i;
+		struct smintg_matrix *matrix;
+
+		matrix = arealloc(intg->matrix,
+		                  sizeof(struct smintg_matrix)
+		                   * intg->nchannels,
+		                  sizeof(struct smintg_matrix)
+		                   * nchannels);
+		if(matrix == NULL) {
+			return -1;
+		}
+		for(i = intg->nchannels; i < nchannels; i++) {
+			matrix[i].y1 = 0.0f;
+			matrix[i].x1 = 0.0f;
+			matrix[i].x2 = 0.0f;
+			matrix[i].x3 = 0.0f;
+			matrix[i].x4 = 0.0f;
+			matrix[i].x5 = 0.0f;
+			matrix[i].x6 = 0.0f;
+			matrix[i].x7 = 0.0f;
+			matrix[i].x8 = 0.0f;
+		}
+		intg->nchannels = nchannels;
+		intg->matrix = matrix;
+	}
+	return 0;
+}
 
 #define SMATHSI_WSINC_0 0.859924743f
 #define SMATHSI_WSINC_1 0.0853056678f
@@ -93,32 +119,43 @@ struct smaths_integrator *smaths_integrator_create(struct smaths_graph *graph);
 
 #define SMATHSI_LEAKINESS 0.995f
 
-static inline float smaths_do_integral(struct smaths_intg_matrix *intg_matrix, float x) {
-    float y = intg_matrix->y1 * SMATHSI_LEAKINESS
-	+ ((x + intg_matrix->x8) * SMATHSI_WSINC_4
-	   + (intg_matrix->x1 + intg_matrix->x7) * SMATHSI_WSINC_3
-	   + (intg_matrix->x2 + intg_matrix->x6) * SMATHSI_WSINC_2
-	   + (intg_matrix->x3 + intg_matrix->x5) * SMATHSI_WSINC_1
-	   + intg_matrix->x4 * SMATHSI_WSINC_0);
+/**
+ * Integrate the signal, parameterized version.
+ */
+static inline float smintg_do(struct smintg_matrix *matrix, float x) {
+	float y = matrix->y1 * SMATHSI_LEAKINESS
+	          + ((x + matrix->x8) * SMATHSI_WSINC_4
+	          + (matrix->x1 + matrix->x7) * SMATHSI_WSINC_3
+	          + (matrix->x2 + matrix->x6) * SMATHSI_WSINC_2
+	          + (matrix->x3 + matrix->x5) * SMATHSI_WSINC_1
+	          + matrix->x4 * SMATHSI_WSINC_0);
 
-    intg_matrix->x8 = intg_matrix->x7;
-    intg_matrix->x7 = intg_matrix->x6;
-    intg_matrix->x6 = intg_matrix->x5;
-    intg_matrix->x5 = intg_matrix->x4;
-    intg_matrix->x4 = intg_matrix->x3;
-    intg_matrix->x3 = intg_matrix->x2;
-    intg_matrix->x2 = intg_matrix->x1;
-    intg_matrix->x1 = x;
-    if(isnormal(y) || y == 0) {
-	intg_matrix->y1 = y;
-    } else if(y == INFINITY) {
-	intg_matrix->y1 = FLT_MAX;
-    } else if(y == -INFINITY) {
-	intg_matrix->y1 = -FLT_MAX;
-    } else {
-	intg_matrix->y1 = 0.0f;
-    }
-    return y;
+	matrix->x8 = matrix->x7;
+	matrix->x7 = matrix->x6;
+	matrix->x6 = matrix->x5;
+	matrix->x5 = matrix->x4;
+	matrix->x4 = matrix->x3;
+	matrix->x3 = matrix->x2;
+	matrix->x2 = matrix->x1;
+	matrix->x1 = x;
+	if(isnormal(y) || y == 0.0f) {
+		matrix->y1 = y;
+	} else if(y == INFINITY) {
+		matrix->y1 = FLT_MAX;
+	} else if(y == -INFINITY) {
+		matrix->y1 = -FLT_MAX;
+	} else {
+		matrix->y1 = 0.0f;
+	}
+	return y;
+}
+
+/**
+ * Integrate the incoming signal.
+ */
+static inline float smintg(struct smintg *intg, int channel,
+                           float x) {
+	return smintg_do(&intg->matrix[channel], x);
 }
 
 #endif /* ! SONICMATHS_INTEGRATOR_H */

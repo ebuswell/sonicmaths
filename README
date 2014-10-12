@@ -1,14 +1,13 @@
-Sonic Maths is a library for modular synthesis on Linux. The eventual
-aim is that it will be suitable for livecoding.
+Sonic Maths is a library for modular synthesis on Linux. The eventual aim is
+that it will be suitable for livecoding.
 
 Requirements
 ------------
 This depends on atomickit, graphline, and jack. At the moment, atomickit and
 graphline should be the latest git.
 
-For Jack, see http://jackaudio.org. I would recommend version 2, but
-I'd be interested in hearing about it working better or worse with
-version 1.
+For Jack, see http://jackaudio.org. I would recommend version 2, but I'd be
+interested in hearing about it working better or worse with version 1.
 
 Installation
 ------------
@@ -25,62 +24,59 @@ Some questions that have never been asked of me:
 
 How stable is Sonic Maths?
 
-Right now, Sonic Maths is in alpha. Mostly that just means that the
-API is not completely stable.
+Right now, Sonic Maths is in alpha. Mostly that just means that the API is not
+completely stable.
 
 Where can I send a bug report?
 
-Please use the git project page at http://github.com/ebuswell/sonicmaths/issues
+Please use the git project page at
+http://github.com/ebuswell/sonicmaths/issues
 
 I don't understand C.  Will you make a GUI for Sonic Maths?
 
-No. My interest in Sonic Maths has to do with its full programmability
-and textual format. I'm far more likely to spend time making the API
-more usable than to put a GUI on top of it. On the other hand, I would
-be happy to include modules for higher-level languages, if anyone
-wants to write one. OTOH, if you'd like to make a GUI, great! As
-always, contact me and I can give guidance and help on these sorts of
-projects.
+No. My interest in Sonic Maths has to do with its full programmability and
+textual format. I'm far more likely to spend time making the API more usable
+than to put a GUI on top of it. On the other hand, I would be happy to include
+modules for higher-level languages, if anyone wants to write one. OTOH, if
+you'd like to make a GUI, great! As always, contact me and I can give guidance
+and help on these sorts of projects.
 
 Will you include feature x?
 
-If you write it and it's simple and mathematically generic enough,
-yes. If it is not very generic (e.g. modeling a particular analog
-synth), write it as a separate library, and I will be happy to link to
-it on the site. Since this project uses jack, and jack has a dssi
-"rack" (jackrack), there's multiple ways of doing this.
+If you write it and it's simple and mathematically generic enough, yes. If it
+is not very generic (e.g. modeling a particular analog synth), write it as a
+separate library, and I will be happy to link to it on the site. Since this
+project uses jack, and jack has a dssi "rack" (jackrack), there's multiple
+ways of doing this.
 
-If you want something that seems obvious, but don't have time to write
-it, send a request. I may not implement it, but it doesn't hurt to
-ask.
+If you want something that seems obvious, but don't have time to write it,
+send a request. I may not implement it, but it doesn't hurt to ask.
 
 What's with the name, Sonic Maths?
 
-The idea of this project is not so much analog modeling, but
-mathematical simplicity. I'm not interested in matching either
-electronic circuits, real-world sounds, nor in doing something in a
-very DSP-ish way (e.g. reverb with comb filters). I guess the idea
-might be best described as "continuum-modeling." I decided on "maths"
-(the British abbreviation) instead of "math" because I like the idea
-that "math" could be plural. It certainly seems that way when
-translating from continuous to discrete mathematics and then back over
-and over again, inevitably drowning in the frequency/time aporia,
-everything getting foggy and trancendental functions sprouting up like
-mushrooms. After you've abandoned naïve hopes and become reconciled to
-this impenetrable fogginess, the roots of mathematics couldn't
-possibly be other than many things.
+The idea of this project is not so much analog modeling, but mathematical
+simplicity. I'm not interested in matching either electronic circuits,
+real-world sounds, nor in doing something in a very DSP-ish way (e.g. reverb
+with comb filters). I guess the idea might be best described as
+"continuum-modeling." I decided on "maths" (the British abbreviation) instead
+of "math" because I like the idea that "math" could be plural. It certainly
+seems that way when translating from continuous to discrete mathematics and
+then back over and over again, inevitably drowning in the frequency/time
+aporia, everything getting foggy and trancendental functions sprouting up like
+mushrooms. After you've abandoned naïve hopes and become reconciled to this
+impenetrable fogginess, the roots of mathematics couldn't possibly be other
+than many things.
 ----------------------------------------------------------------------
 
 Sonic Maths is Copyright 2013 Evan Buswell
 
-Sonic Maths is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, version 2.
+Sonic Maths is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, version 2.
 
-Sonic Maths is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Sonic Maths is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with
+Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
