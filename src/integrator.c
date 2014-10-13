@@ -18,6 +18,7 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
+#include <string.h>
 #include <atomickit/malloc.h>
 #include <atomickit/rcp.h>
 #include "sonicmaths/integrator.h"
@@ -27,15 +28,7 @@ int smintg_init(struct smintg *intg, void (*destroy)(struct smintg *)) {
 	if(intg->matrix == NULL) {
 		return -1;
 	}
-	intg->matrix[0].y1 = 0.0f;
-	intg->matrix[0].x1 = 0.0f;
-	intg->matrix[0].x2 = 0.0f;
-	intg->matrix[0].x3 = 0.0f;
-	intg->matrix[0].x4 = 0.0f;
-	intg->matrix[0].x5 = 0.0f;
-	intg->matrix[0].x6 = 0.0f;
-	intg->matrix[0].x7 = 0.0f;
-	intg->matrix[0].x8 = 0.0f;
+	memset(intg->matrix, 0, sizeof(struct smintg_matrix));
 	intg->nchannels = 1;
 
 	arcp_region_init(intg, (arcp_destroy_f) destroy);

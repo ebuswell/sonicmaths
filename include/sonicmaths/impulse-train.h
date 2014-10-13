@@ -63,3 +63,5 @@ static inline float smitrain_do(float f, float t) {
  	       / (1.0f + m_f * m_f - 2.0f * m_f * cosf(2.0f * wt_2));
 	return out;
 }
+
+#endif /* ! SONICMATHS_IMPULSE_TRAIN */

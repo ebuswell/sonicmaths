@@ -94,16 +94,10 @@ static inline int smintg_redim(struct smintg *intg, int nchannels) {
 		if(matrix == NULL) {
 			return -1;
 		}
-		for(i = intg->nchannels; i < nchannels; i++) {
-			matrix[i].y1 = 0.0f;
-			matrix[i].x1 = 0.0f;
-			matrix[i].x2 = 0.0f;
-			matrix[i].x3 = 0.0f;
-			matrix[i].x4 = 0.0f;
-			matrix[i].x5 = 0.0f;
-			matrix[i].x6 = 0.0f;
-			matrix[i].x7 = 0.0f;
-			matrix[i].x8 = 0.0f;
+		if(nchannels > intg->nchannels) {
+			memset(matrix + intg->nchannels, 0,
+			       sizeof(struct smintg_matrix)
+			        * (nchannels - intg->nchannels));
 		}
 		intg->nchannels = nchannels;
 		intg->matrix = matrix;
