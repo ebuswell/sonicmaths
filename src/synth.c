@@ -56,6 +56,7 @@ struct smsynth *smsynth_create() {
 	r = smsynth_init(ret, __smsynth_destroy);
 	if(r != 0) {
 		afree(ret, sizeof(struct smsynth));
+		return NULL;
 	}
 
 	return ret;

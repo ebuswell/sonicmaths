@@ -59,6 +59,7 @@ struct sm2order *sm2order_create() {
 	r = sm2order_init(ret, __sm2order_destroy);
 	if(r != 0) {
 		afree(ret, sizeof(struct sm2order));
+		return NULL;
 	}
 
 	return ret;

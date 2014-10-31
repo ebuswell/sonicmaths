@@ -10,14 +10,17 @@ include config.mk
 
 VERSION=0.2
 
-SRCS=src/synth.c src/integrator.c src/second-order.c
+SRCS=src/synth.c src/integrator.c src/second-order.c src/key.c \
+     src/envelope-generator.c
 
 TESTSRCS=src/test.c
 
 HEADERS=include/sonicmaths/synth.h include/sonicmaths/sine.h \
         include/sonicmaths/impulse-train.h include/sonicmaths/integrator.h \
         include/sonicmaths/second-order.h include/sonicmaths/bandpass.h \
-        include/sonicmaths/highpass.h include/sonicmaths/lowpass.h
+        include/sonicmaths/highpass.h include/sonicmaths/lowpass.h \
+        include/sonicmaths/notch.h include/sonicmaths/envelope-generator.h \
+        include/sonicmaths/clock.h include/sonicmaths/math.h
 
 OBJS=${SRCS:.c=.o}
 PICOBJS=${SRCS:.c=.pic.o}

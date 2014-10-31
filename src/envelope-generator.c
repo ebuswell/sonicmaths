@@ -1,5 +1,5 @@
 /*
- * integrator.c
+ * envelope_generator.c
  * 
  * Copyright 2014 Evan Buswell
  * 
@@ -18,48 +18,47 @@
  * along with Sonic Maths.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
+
 #include <atomickit/malloc.h>
 #include <atomickit/rcp.h>
-#include "sonicmaths/integrator.h"
+#include "sonicmaths/envelope-generator.h"
 
-int smintg_init(struct smintg *intg, void (*destroy)(struct smintg *)) {
-	intg->matrix = amalloc(sizeof(struct smintg_matrix));
-	if(intg->matrix == NULL) {
+int smenvg_init(struct smenvg *envg, void (*destroy)(struct smenvg *)) {
+	envg->state = amalloc(sizeof(struct smenvg_state));
+	if(envg->state == NULL) {
 		return -1;
 	}
-	memset(intg->matrix, 0, sizeof(struct smintg_matrix));
-	intg->nchannels = 1;
+	memset(envg->state, 0, sizeof(struct smenvg_state));
+	envg->nchannels = 1;
 
-	arcp_region_init(intg, (arcp_destroy_f) destroy);
+	arcp_region_init(envg, (arcp_destroy_f) destroy);
 
 	return 0;
 }
 
-void smintg_destroy(struct smintg *intg) {
-	afree(intg->matrix, sizeof(struct smintg_matrix) * intg->nchannels);
+void smenvg_destroy(struct smenvg *envg) {
+	afree(envg->state, sizeof(struct smenvg_state) * envg->nchannels);
 }
 
-static void __smintg_destroy(struct smintg *intg) {
-	smintg_destroy(intg);
-	afree(intg, sizeof(struct smintg));
+static void __smenvg_destroy(struct smenvg *envg) {
+	smenvg_destroy(envg);
+	afree(envg, sizeof(struct smenvg));
 }
 
-struct smintg *smintg_create() {
+struct smenvg *smenvg_create() {
 	int r;
-	struct smintg *ret;
+	struct smenvg *ret;
 
-	ret = amalloc(sizeof(struct smintg));
+	ret = amalloc(sizeof(struct smenvg));
 	if(ret == NULL) {
 		return NULL;
 	}
 
-	r = smintg_init(ret, __smintg_destroy);
+	r = smenvg_init(ret, __smenvg_destroy);
 	if(r != 0) {
-		afree(ret, sizeof(struct smintg));
+		afree(ret, sizeof(struct smenvg));
 		return NULL;
 	}
 
 	return ret;
 }
-

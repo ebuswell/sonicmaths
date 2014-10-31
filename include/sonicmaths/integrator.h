@@ -83,7 +83,6 @@ struct smintg *smintg_create(void);
  */
 static inline int smintg_redim(struct smintg *intg, int nchannels) {
 	if(nchannels != intg->nchannels) {
-		int i;
 		struct smintg_matrix *matrix;
 
 		matrix = arealloc(intg->matrix,
