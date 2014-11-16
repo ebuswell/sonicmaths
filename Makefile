@@ -11,7 +11,10 @@ include config.mk
 VERSION=0.2
 
 SRCS=src/synth.c src/integrator.c src/second-order.c src/key.c \
-     src/envelope-generator.c
+     src/envelope-generator.c src/sequence-gram.c src/sequence-lex.c \
+     src/sequence.c
+
+GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
 
 TESTSRCS=src/test.c
 
@@ -20,7 +23,8 @@ HEADERS=include/sonicmaths/synth.h include/sonicmaths/sine.h \
         include/sonicmaths/second-order.h include/sonicmaths/bandpass.h \
         include/sonicmaths/highpass.h include/sonicmaths/lowpass.h \
         include/sonicmaths/notch.h include/sonicmaths/envelope-generator.h \
-        include/sonicmaths/clock.h include/sonicmaths/math.h
+        include/sonicmaths/clock.h include/sonicmaths/math.h \
+	include/sonicmaths/sequence.h
 
 OBJS=${SRCS:.c=.o}
 PICOBJS=${SRCS:.c=.pic.o}
@@ -28,7 +32,18 @@ TESTOBJS=${TESTSRCS:.c=.o}
 
 MAJOR=${shell echo ${VERSION}|cut -d . -f 1}
 
+.SECONDARY: ${GENSRCS}
+
 all: shared sonicmaths.pc
+
+src/sequence-lex.c: src/sequence.l src/sequence-gram.h
+	${LEX} ${LEXFLAGS} -P smseq_ -o $@ $<
+
+src/sequence-gram.c: src/sequence.y
+	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
+
+src/sequence-gram.h: src/sequence.y
+	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
 
 .c.o:
 	${CC} ${CFLAGS} -c $< -o $@
@@ -115,6 +130,7 @@ clean:
 	rm -f sonicmaths.pc
 	rm -f libsonicmaths.so
 	rm -f libsonicmaths.a
+	rm -f ${GENSRCS}
 	rm -f ${OBJS}
 	rm -f ${PICOBJS}
 	rm -f ${TESTOBJS}

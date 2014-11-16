@@ -80,7 +80,7 @@ static inline int smclock_redim(struct smclock *clock, int nchannels) {
 /**
  * Get the current time for a given channel and rate.
  */
-static inline smclock(struct smclock *clock, float channel, float rate) {
+static inline float smclock(struct smclock *clock, int channel, float rate) {
 	float ret = clock->t[channel];
 	clock->t[channel] += rate;
 	return ret;
