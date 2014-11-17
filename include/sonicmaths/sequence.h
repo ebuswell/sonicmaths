@@ -23,6 +23,7 @@
 #ifndef SONICMATHS_SEQUENCE_H
 #define SONICMATHS_SEQUENCE_H 1
 
+#include <atomickit/atomic.h>
 #include <atomickit/rcp.h>
 
 struct smseq_event {
@@ -54,91 +55,78 @@ struct smseq {
 	float *prev_value;
 };
 
-static inline float smseq(struct smseq *seq, int channel, float time, float *ctl) {
-	int u, l, i, j;
-	bool exact, prev_exact;
+int smseq_init(struct smseq *seq,
+               char *filename,
+	       void (*error)(const char *),
+               void (*destroy)(struct smseq *seq));
+
+void smseq_destroy(struct smseq *seq);
+
+struct smseq *smseq_create(char *filename, void (*error)(const char *));
+
+static inline float smseq(struct smseq *seq, int channel,
+                          float time, float *ctl) {
+	ssize_t u, l, i;
+	bool desc;
+	float prev_time;
+
 	if(ctl != NULL) {
 		*ctl = 0.0f;
 	}
 	if(channel >= seq->nchannels) {
 		return 0.0f;
 	}
-	/* find the previous event using binary search */
-	l = 0;
+
+	time *= seq->multiple;
+
+	prev_time = seq->prev_time[channel];
+
+	desc = (time < seq->prev_time[channel]);
+
+	/* Find first event */
+	i = l = 0;
 	u = seq->beats->len;
 	while(l < u) {
-		float v, needle;
+		float v;
 		i = (l + u) / 2;
 		v = seq->beats->beats[i].sequence;
-		needle = seq->prev_time[channel];
-		if(needle < v) {
+		if(prev_time < v) {
 			u = i;
-		} else if(needle > v) {
+		} else if(prev_time > v) {
 			l = ++i;
 		} else {
-			prev_exact = true;
-			break;
+			goto exact_match;
 		}
 	}
-	if(time < seq->prev_time[channel]) {
-		/* Moving down */
-		u = i + 1;
-		l = 0;
-	} else {
-		/* Moving up */
-		l = i;
-		u = seq->beats->len;
+
+	/* At this point, the event at i is after prev_time, which is fine for
+ 	 * ascending, but for descending, we want the event at i to be before
+ 	 * prev_time. Since we didn't get an exact match, this is just the
+ 	 * previous event. */
+	if(desc) {
+		i--;
 	}
-	while(l < u) {
-		float v;
-		j = (l + u) / 2;
-		v = seq->beats->beats[j].sequence;
-		if(time < v) {
-			u = j;
-		} else if(time > v) {
-			l = ++j;
-		} else {
-			exact = true;
-			break;
-		}
-	}
+
+exact_match:
 	seq->prev_time[channel] = time;
-	if(time < seq->prev_time[channel]) {
-		/* Moving down */
-		u = i;
-		l = exact ? j - 1 : j;
-		for(i = u; i > l; i--) {
-			struct smseq_event *event;
-			if((int) seq->beats->beats[i].events->len <= channel) {
-				continue;
-			}
-			event = &seq->beats->beats[i].events->events[channel];
-			if(event->ctl == 0) {
-				continue;
-			}
-			if(ctl != NULL) {
-				*ctl = event->ctl;
-			}
-			seq->prev_value[channel] = event->value;
+
+	for(; desc ? (i >= 0) : (i < (ssize_t) seq->beats->len); i += desc ? -1 : 1) {
+		struct smseq_event *event;
+		if(desc ? (seq->beats->beats[i].sequence < time)
+ 		        : (seq->beats->beats[i].sequence > time)) {
+			break;
 		}
-	} else {
-		/* Moving up */
-		l = prev_exact ? i : i + 1;
-		u = exact ? j : j + 1;
-		for(i = l; i < u; i++) {
-			struct smseq_event *event;
-			if((int) seq->beats->beats[i].events->len <= channel) {
-				continue;
-			}
-			event = &seq->beats->beats[i].events->events[channel];
-			if(event->ctl == 0) {
-				continue;
-			}
-			if(ctl != NULL) {
-				*ctl = event->ctl;
-			}
-			seq->prev_value[channel] = event->value;
+		if((int) seq->beats->beats[i].events->len <= channel) {
+			continue;
 		}
+		event = &seq->beats->beats[i].events->events[channel];
+		if(event->ctl == 0) {
+			continue;
+		}
+		if(ctl != NULL) {
+			*ctl = event->ctl;
+		}
+		seq->prev_value[channel] = event->value;
 	}
 	return seq->prev_value[channel];
 }
