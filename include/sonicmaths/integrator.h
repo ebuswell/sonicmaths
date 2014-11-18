@@ -37,6 +37,7 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
 
 #include <math.h>
 #include <float.h>
+#include <string.h>
 #include <atomickit/rcp.h>
 
 /**

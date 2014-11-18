@@ -32,6 +32,7 @@ int smclock_init(struct smclock *clock,
 	clock->t[0] = 0.0f;
 
 	arcp_region_init(clock, (arcp_destroy_f) destroy);
+	return 0;
 }
 
 void smclock_destroy(struct smclock *clock) {

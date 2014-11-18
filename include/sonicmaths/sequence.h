@@ -64,6 +64,8 @@ void smseq_destroy(struct smseq *seq);
 
 struct smseq *smseq_create(char *filename, void (*error)(const char *));
 
+#include <stdio.h>
+
 static inline float smseq(struct smseq *seq, int channel,
                           float time, float *ctl) {
 	ssize_t u, l, i;
@@ -120,13 +122,15 @@ exact_match:
 			continue;
 		}
 		event = &seq->beats->beats[i].events->events[channel];
-		if(event->ctl == 0) {
+		if(event->ctl == 0.0f) {
 			continue;
 		}
 		if(ctl != NULL) {
 			*ctl = event->ctl;
 		}
-		seq->prev_value[channel] = event->value;
+		if(event->ctl == 1.0f) {
+			seq->prev_value[channel] = event->value;
+		}
 	}
 	return seq->prev_value[channel];
 }

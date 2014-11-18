@@ -41,13 +41,6 @@ n=1
 #define M_MNTS 9634303.96f
 #define M_MNTS_NSQR 0.000322173509f
 
-static inline float smitrain(struct smsynth *synth, int channel,
-                             float freq, float phase) {
-	float ret = smitrain_do(freq, synth->t[channel] + phase);
-	synth->t[channel] += freq;
-	return ret;
-}
-
 static inline float smitrain_do(float f, float t) {
 	float n = floorf(1.0f / (2.0f * f)); /* the number of harmonics */
 	float wt_2 = ((float) M_PI) * t; /* half angular frequency */
@@ -62,6 +55,16 @@ static inline float smitrain_do(float f, float t) {
     	          - m_f)
  	       / (1.0f + m_f * m_f - 2.0f * m_f * cosf(2.0f * wt_2));
 	return out;
+}
+
+static inline float smitrain(struct smsynth *synth, int channel,
+                             float freq, float phase) {
+	float ret = smitrain_do(freq, synth->t[channel] + phase);
+	synth->t[channel] += freq;
+	while(synth->t[channel] > 1.0f) {
+		synth->t[channel] -= 1.0f;
+	}
+	return ret;
 }
 
 #endif /* ! SONICMATHS_IMPULSE_TRAIN */

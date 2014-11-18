@@ -58,8 +58,8 @@ int sm2order_init(struct sm2order *filter,
  */
 struct sm2order *sm2order_create(void);
 
-static inline int sm2order_redim_state(struct sm2order *filter,
-                                       int nchannels) {
+static inline int sm2order_redim(struct sm2order *filter,
+                                 int nchannels) {
 	if(filter->nchannels != nchannels) {
 		struct sm2order_matrix *matrix;
 		matrix = arealloc(filter->matrix,

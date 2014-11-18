@@ -129,6 +129,7 @@ static inline int smenvg_redim(struct smenvg *envg, int nchannels) {
 		envg->nchannels = nchannels;
 		envg->state = state;
 	}
+	return 0;
 }
 
 /* e^-pi, the base of the exponent and the fraction of the distance from the
@@ -322,6 +323,7 @@ static inline float smenvg(struct smenvg *envg, int channel,
 		break;
 	case ENVG_FINISHED:
 	start_finished:
+	default:
 		y = release_a;
 	}
 

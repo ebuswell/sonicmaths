@@ -12,7 +12,7 @@ VERSION=0.2
 
 SRCS=src/synth.c src/integrator.c src/second-order.c src/key.c \
      src/envelope-generator.c src/sequence-gram.c src/sequence-lex.c \
-     src/sequence.c
+     src/sequence.c src/clock.c
 
 GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
 
@@ -36,13 +36,13 @@ MAJOR=${shell echo ${VERSION}|cut -d . -f 1}
 
 all: shared sonicmaths.pc
 
-src/sequence-lex.c: src/sequence.l src/sequence-gram.h
+src/sequence-lex.c: src/sequence-lex.l src/sequence-gram.h
 	${LEX} ${LEXFLAGS} -P smseq_ -o $@ $<
 
-src/sequence-gram.c: src/sequence.y
+src/sequence-gram.c: src/sequence-gram.y
 	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
 
-src/sequence-gram.h: src/sequence.y
+src/sequence-gram.h: src/sequence-gram.y
 	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
 
 .c.o:

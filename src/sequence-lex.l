@@ -3,14 +3,17 @@
 %option					stack
 %option					noyyalloc noyyrealloc noyyfree
 %option					noyy_top_state noinput nounput
+%option					noyywrap
+%option					extra-type="bool"
 
 %x COMMENT QUOTE
 
 %{
+#include <stdbool.h>
+#include <atomickit/malloc.h>
 #include "sonicmaths/sequence.h"
 #include "sequence.h"
 #include "sequence-gram.h"
-#include <atomickit/malloc.h>
 
 static float notetof(char *note);
 
@@ -31,7 +34,12 @@ int smseq_lex(YYSTYPE *yylval, void *yyscanner);
 <COMMENT>"*)"				{ yy_pop_state(yyscanner); }
 <COMMENT>.|[\r\n]			/* eat comment content */ ;
 \r\n|\n|\r				{ return (int) '\n'; }
-<INITIAL><<EOF>>			{ return (int) '\n'; }
+<INITIAL><<EOF>>			{ if(yyextra) {
+					  	yyextra = false;
+					  	return (int) '\n';
+					  } else {
+					  	return 0;
+					  } }
 [A-Ga-g][#b]?([+-]?[0-9]+)?		{ yylval->num = notetof(yytext);
 					  return NOTE; }
 [+-]?[0-9]+(\.[0-9]+)?([eE][0-9]+)?	{ yylval->num = atof(yytext);
@@ -92,7 +100,7 @@ static inline float notetof(char *note) {
 }
 
 void *yyalloc(size_t bytes,
-                     void *yyscanner __attribute__((unused))) {
+              void *yyscanner __attribute__((unused))) {
 	void *ret;
 	bytes += sizeof(void *);
 	ret = amalloc(bytes);
@@ -104,11 +112,17 @@ void *yyalloc(size_t bytes,
 }
 
 void *yyrealloc(void *ptr, size_t bytes,
-                       void *yyscanner __attribute__((unused))) {
+                void *yyscanner __attribute__((unused))) {
 	void *ret;
+	size_t size;
 	bytes += sizeof(void *);
-	ptr -= sizeof(void *);
-	ret = arealloc(ptr, *((size_t *) ptr), bytes);
+	if(ptr != NULL) {
+		ptr -= sizeof(void *);
+		size = *((size_t *) ptr);
+	} else {
+		size = 0;
+	}
+	ret = arealloc(ptr, size, bytes);
 	if(ret == NULL) {
 		return NULL;
 	}
@@ -117,7 +131,13 @@ void *yyrealloc(void *ptr, size_t bytes,
 }
 
 void yyfree(void *ptr,
-                   void *yyscanner __attribute__((unused))) {
-	ptr -= sizeof(void *);
-	afree(ptr, *((size_t *) ptr));
+            void *yyscanner __attribute__((unused))) {
+	size_t size;
+	if(ptr != NULL) {
+		ptr -= sizeof(void *);
+		size = *((size_t *) ptr);
+	} else {
+		size = 0;
+	}
+	afree(ptr, size);
 }

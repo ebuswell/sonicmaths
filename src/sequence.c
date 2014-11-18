@@ -18,12 +18,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <atomickit/malloc.h>
 #include <atomickit/rcp.h>
 #include "sonicmaths/sequence.h"
 #include "sequence.h"
 
-int smseq_lex_init(void **);
+int smseq_lex_init_extra(bool, void **);
 int smseq_lex_destroy(void *);
 void smseq_set_in(FILE *, void *);
 int smseq_parse(struct smseq_parser *);
@@ -95,7 +96,7 @@ int smseq_init(struct smseq *seq,
 	seq_info.multiple = 1.0f;
 	seq_info.error = error;
 
-	r = smseq_lex_init(&seq_info.scanner);
+	r = smseq_lex_init_extra(false, &seq_info.scanner);
 	if(r != 0) {
 		return r;
 	}

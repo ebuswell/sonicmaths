@@ -31,8 +31,11 @@
  */
 static inline float smsine(struct smsynth *synth, int channel,
                            float freq, float phase) {
-	float ret = sinf(2 * ((float) M_PI) * (synth->t[channel] + phase));
+	float ret = sinf(2.0f * ((float) M_PI) * (synth->t[channel] + phase));
 	synth->t[channel] += freq;
+	while(synth->t[channel] > 1.0f) {
+		synth->t[channel] -= 1.0f;
+	}
 	return ret;
 }
 

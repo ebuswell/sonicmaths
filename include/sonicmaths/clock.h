@@ -24,6 +24,7 @@
 #ifndef SONICMATHS_CLOCK_H
 #define SONICMATHS_CLOCK_H 1
 
+#include <string.h>
 #include <atomickit/rcp.h>
 
 /**
@@ -35,7 +36,8 @@ struct smclock {
 	struct arcp_region;
 	int nchannels; /** The number of channels of state we're currently
 	                *  storing. */
-	float *t; /** The current time */
+	float t; /** The current time */
+	float loop; /** Loop at this time */
 };
 
 /**
@@ -54,35 +56,31 @@ struct smclock *smclock_create(void);
  */
 void smclock_destroy(struct smclock *clock);
 
-/**
- * Redim the clock state based on number of channels.
- */
-static inline int smclock_redim(struct smclock *clock, int nchannels) {
-	if(nchannels != clock->nchannels) {
-		float *t = arealloc(clock->t,
-		                    sizeof(float) * clock->nchannels,
-		                    sizeof(float) * nchannels);
-		if(t == NULL) {
-	    		return -1;
-		}
-		if(clock->nchannels < nchannels) {
-	    		memset(clock->t + clock->nchannels, 0,
-			       sizeof(float)
-			        * (nchannels - clock->nchannels));
-		}
-		clock->t = t;
-		clock->nchannels = nchannels;
-	}
+static inline void smclock_set_loop(struct smclock *clock, float loop) {
+	clock->loop = loop;
+}
 
-	return 0;
+static inline float smclock_get_loop(struct smclock *clock) {
+	return clock->loop;
+}
+
+static inline void smclock_set_time(struct smclock *clock, float time) {
+	clock->t = time;
+}
+
+static inline float smclock_get_time(struct smclock *clock) {
+	return clock->t;
 }
 
 /**
  * Get the current time for a given channel and rate.
  */
-static inline float smclock(struct smclock *clock, int channel, float rate) {
-	float ret = clock->t[channel];
-	clock->t[channel] += rate;
+static inline float smclock(struct smclock *clock, float rate) {
+	float ret = clock->t;
+	clock->t += rate;
+	while(clock->t > clock->loop) {
+		clock->t -= clock->loop;
+	}
 	return ret;
 }
 

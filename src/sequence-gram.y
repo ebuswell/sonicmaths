@@ -1,6 +1,7 @@
 %pure-parser
 
 %{
+#include <stdio.h>
 #include <stddef.h>
 #include <atomickit/malloc.h>
 #include "sonicmaths/sequence.h"
@@ -29,16 +30,22 @@ static void smseq_error(struct smseq_parser *seq_info, const char *s);
 
 %%
 
-sequence : headers beats
-		{ seq_info->beats = $<beatlist>2; }
+sequence : emptylines headers beats emptylines
+		{ seq_info->beats = $<beatlist>3; }
          ;
+
+emptyline : '\n'
+          ;
+emptylines : /* Empty */
+           | emptylines emptyline
+           ;
 
 headers : /* Empty */
         | headersnonl '\n'
         ;
 
 headersnonl : /* Empty */
-            | headersnonl header '\n'
+            | headersnonl emptylines header '\n'
             ;
 
 header : timeheader
@@ -60,7 +67,7 @@ beats : /* Empty */
 		  	YYERROR_CALL("Failed to allocate memory.");
 		  }
 		  $<beatlist>$->len = 0; }
-      | beats beat '\n'
+      | beats emptylines beat '\n'
 		{ struct smseq_beatlist *bl;
 		  bl = arealloc($<beatlist>1,
 		                sizeof(struct smseq_beatlist)
@@ -72,9 +79,10 @@ beats : /* Empty */
 		  if(bl == NULL) {
 		  	YYERROR_CALL("Failed to allocate memory.");
 		  }
-		  memcpy(&bl->beats[bl->len], &$<beat>2,
+		  memcpy(&bl->beats[bl->len], &$<beat>3,
 		         sizeof(struct smseq_beat));
-		  bl->len += 1.0f; }
+		  bl->len += 1; 
+		  $<beatlist>$ = bl; }
       ;
 
 beat : numberedsub
@@ -113,7 +121,8 @@ events : /* Empty */
 		  }
 		  memcpy(&el->events[el->len], &$<event>2,
 		         sizeof(struct smseq_event));
-		  el->len += 1.0f; }
+		  el->len += 1;
+		  $<eventlist>$ = el; }
        ;
 
 numberedsub : NUMBER events
@@ -132,6 +141,14 @@ markedsub : "." events
 
 %%
 
+int smseq_get_column(void *yyscanner);
+int smseq_get_lineno(void *yyscanner);
+
 static void smseq_error(struct smseq_parser *seq_info, const char *s) {
-	seq_info->error(s);
+	char buffer[4096];
+	snprintf(buffer, 4096, "%d:%d: %s\n",
+	         smseq_get_lineno(seq_info->scanner),
+	         smseq_get_column(seq_info->scanner),
+	         s);
+	seq_info->error(buffer);
 }
