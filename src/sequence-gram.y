@@ -1,8 +1,27 @@
+/*
+ * Copyright 2014 Evan Buswell
+ * 
+ * This file is part of Sonic Maths.
+ * 
+ * Sonic Maths is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, version 2.
+ * 
+ * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 %pure-parser
 
 %{
 #include <stdio.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <atomickit/malloc.h>
 #include "sonicmaths/sequence.h"
 #include "sequence.h"
@@ -19,19 +38,20 @@ static void smseq_error(struct smseq_parser *seq_info, const char *s);
 
 %union {
 	float num;
+	bool boolean;
 	struct smseq_event event;
 	struct smseq_eventlist *eventlist;
 	struct smseq_beat beat;
 	struct smseq_beatlist *beatlist;
 }
 
-%token NUMBER NOTE
-%token NOTEOFF TIMEHEADER ROOTHEADER
+%token NUMBER NOTE BOOL
+%token NOTEOFF TIMEHEADER ROOTHEADER LOOPHEADER
 
 %%
 
-sequence : emptylines headers beats emptylines
-		{ seq_info->beats = $<beatlist>3; }
+sequence : emptylines headers emptylines beats emptylines
+		{ seq_info->beats = $<beatlist>4; }
          ;
 
 emptyline : '\n'
@@ -41,15 +61,16 @@ emptylines : /* Empty */
            ;
 
 headers : /* Empty */
-        | headersnonl '\n'
+        | headersnonl emptyline
         ;
 
 headersnonl : /* Empty */
-            | headersnonl emptylines header '\n'
+            | headersnonl header '\n'
             ;
 
 header : timeheader
        | rootheader
+       | loopheader
        ;
 
 timeheader : TIMEHEADER NUMBER '/' NUMBER
@@ -59,6 +80,10 @@ timeheader : TIMEHEADER NUMBER '/' NUMBER
 
 rootheader : ROOTHEADER NOTE
 		{ seq_info->root = $<num>2; }
+           ;
+
+loopheader : LOOPHEADER BOOL
+	   	{ seq_info->loop = $<boolean>2; }
            ;
 
 beats : /* Empty */

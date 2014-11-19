@@ -23,6 +23,7 @@
 #ifndef SONICMATHS_SEQUENCE_H
 #define SONICMATHS_SEQUENCE_H 1
 
+#include <pthread.h>
 #include <atomickit/atomic.h>
 #include <atomickit/rcp.h>
 
@@ -50,6 +51,8 @@ struct smseq {
 	struct arcp_region;
 	int nchannels;
 	float multiple;
+	bool loop;
+	float maxseq;
 	struct smseq_beatlist *beats;
 	float *prev_time;
 	float *prev_value;
@@ -64,26 +67,17 @@ void smseq_destroy(struct smseq *seq);
 
 struct smseq *smseq_create(char *filename, void (*error)(const char *));
 
-#include <stdio.h>
+pthread_t smseq_start_watch(char *filename, arcp_t *dest,
+                            void (*error)(const char *));
 
-static inline float smseq(struct smseq *seq, int channel,
-                          float time, float *ctl) {
+static inline float smseq_do(struct smseq *seq, int channel, float value,
+                             float prev_time, float time, float *ctl) {
 	ssize_t u, l, i;
 	bool desc;
-	float prev_time;
 
-	if(ctl != NULL) {
-		*ctl = 0.0f;
-	}
-	if(channel >= seq->nchannels) {
-		return 0.0f;
-	}
+	// printf("value: %f\ntime: %f\nprev: %f\n\n", (double) value, (double) time, (double) prev_time);
 
-	time *= seq->multiple;
-
-	prev_time = seq->prev_time[channel];
-
-	desc = (time < seq->prev_time[channel]);
+	desc = (time < prev_time);
 
 	/* Find first event */
 	i = l = 0;
@@ -110,7 +104,6 @@ static inline float smseq(struct smseq *seq, int channel,
 	}
 
 exact_match:
-	seq->prev_time[channel] = time;
 
 	for(; desc ? (i >= 0) : (i < (ssize_t) seq->beats->len); i += desc ? -1 : 1) {
 		struct smseq_event *event;
@@ -129,10 +122,73 @@ exact_match:
 			*ctl = event->ctl;
 		}
 		if(event->ctl == 1.0f) {
-			seq->prev_value[channel] = event->value;
+			value = event->value;
 		}
 	}
-	return seq->prev_value[channel];
+	return value;
+}
+
+static inline float smseq(struct smseq *seq, int channel,
+                          float time, float *ctl) {
+	float prev_time;
+	float value;
+
+	if(ctl != NULL) {
+		*ctl = 0.0f;
+	}
+
+	if(channel >= seq->nchannels) {
+		return 0.0f;
+	}
+	
+	value = seq->prev_value[channel];
+
+	time *= seq->multiple;
+
+	prev_time = seq->prev_time[channel];
+	seq->prev_time[channel] = time;
+
+	if(seq->loop) {
+		while(time > seq->maxseq) {
+			time -= seq->maxseq;
+			prev_time -= seq->maxseq;
+		}
+		while(time < 0.0f) {
+			time += seq->maxseq;
+			prev_time += seq->maxseq;
+		}
+		if(prev_time < 0.0f) {
+			/* we just looped while ascending */
+			value = smseq_do(seq, channel, value,
+			                 seq->maxseq + prev_time,
+			                 seq->maxseq,
+			                 ctl);
+			value = smseq_do(seq, channel, value,
+			                 0.0f,
+			                 time,
+			                 ctl);
+			goto done;
+		}
+		if(prev_time > seq->maxseq) {
+			/* we just looped while descending */
+			value = smseq_do(seq, channel, value,
+			                 prev_time - seq->maxseq,
+			                 0.0f,
+			                 ctl);
+			value = smseq_do(seq, channel, value,
+			                 seq->maxseq,
+			                 time,
+			                 ctl);
+			goto done;
+		}
+	}
+	value = smseq_do(seq, channel, value,
+			 prev_time,
+			 time,
+			 ctl);
+done:
+	seq->prev_value[channel] = value;
+	return value;
 }
 
 #endif /* ! SONICMATHS_SEQUENCE_H */

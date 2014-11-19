@@ -25,18 +25,14 @@
 
 int smclock_init(struct smclock *clock,
 		void (*destroy)(struct smclock *clock)) {
-	clock->t = amalloc(sizeof(float));
-	if(clock->t == NULL) {
-		return -1;
-	}
-	clock->t[0] = 0.0f;
+	clock->t = 0.0;
 
 	arcp_region_init(clock, (arcp_destroy_f) destroy);
 	return 0;
 }
 
-void smclock_destroy(struct smclock *clock) {
-	afree(clock->t, sizeof(float) * clock->nchannels);
+void smclock_destroy(struct smclock *clock __attribute__((unused))) {
+	/* Do nothing */
 }
 
 static void __smclock_destroy(struct smclock *clock) {

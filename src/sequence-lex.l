@@ -1,3 +1,21 @@
+/*
+ * Copyright 2014 Evan Buswell
+ * 
+ * This file is part of Sonic Maths.
+ * 
+ * Sonic Maths is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, version 2.
+ * 
+ * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 %option					reentrant
 %option					warn nodefault
 %option					stack
@@ -47,6 +65,9 @@ int smseq_lex(YYSTYPE *yylval, void *yyscanner);
 [Xx]					{ return NOTEOFF; }
 [Tt][Ii][Mm][Ee]:			{ return TIMEHEADER; }
 [Rr][Oo][Oo][Tt]:			{ return ROOTHEADER; }
+[Ll][Oo][Oo][Pp]:			{ return LOOPHEADER; }
+[Tt][Rr][Uu][Ee]			{ yylval->boolean = true; return BOOL; }
+[Ff][Aa][Ll][Ss][Ee]			{ yylval->boolean = false; return BOOL; }
 .					{ return (int) *yytext; }
 
 %%
