@@ -34,6 +34,8 @@
 #include <sonicmaths/envelope-generator.h>
 #include <sonicmaths/bandpass.h>
 #include <sonicmaths/lowpass.h>
+#include <sonicmaths/noise.h>
+#include <sonicmaths/distortion.h>
 
 #define SMASYNTH_NSYNTHS 4
 #define SMASYNTH_NINTGS 8
@@ -173,6 +175,83 @@ static inline float smasynth(struct smasynth *asynth,
 	     * smbandpass(&asynth->filterres, channel, o, ff, 1);
 	y *= smenvg(&asynth->aenvg, channel, false, ctl,
 	            attack, 1, decay, sustain, release, 0);
+
+	return y;
+}
+
+struct smdrum {
+	struct arcp_region;
+	struct smsynth osc;
+	struct smenvg toneenvg;
+	struct smenvg noiseenvg;
+	struct smenvg pitchenvg;
+	struct sm2order filterlp;
+};
+
+void smdrum_destroy(struct smdrum *drum);
+
+int smdrum_init(struct smdrum *drum,
+                  void (*destroy)(struct smdrum *));
+
+struct smdrum *smdrum_create(void);
+
+static inline int smdrum_redim(struct smdrum *drum, int nchannels) {
+	int r;
+
+	r = smsynth_redim(&drum->osc, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = smenvg_redim(&drum->toneenvg, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = smenvg_redim(&drum->noiseenvg, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = smenvg_redim(&drum->pitchenvg, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = sm2order_redim(&drum->filterlp, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	return 0;
+}
+
+static inline float smdrum(struct smdrum *drum,
+                           int channel, float f, float ctl,
+                           float attack, float decay, float toneamp,
+                           float noiseattack, float noisedecay, float noiseamp,
+                           float pitchdrop, float punch,
+                           float cutoff) {
+	float y, o, n, fenv, oenv, nenv, pitchmin;
+
+	pitchmin = f * powf(2, -pitchdrop/12);
+
+	fenv = smenvg(&drum->pitchenvg, channel, false, ctl,
+	              attack, f, decay, pitchmin, decay, pitchmin);
+	fenv = f * smdistort((1 + punch) * fenv / f, SMDISTORT_EXP, 2);
+
+	o = smsine(&drum->osc, channel, fenv, 0.0f);
+	n = smnoise(SMNOISE_GAUSSIAN);
+	oenv = smenvg(&drum->toneenvg, channel, false, ctl,
+	              attack, 1, decay, 0, decay, 0);
+	oenv = smdistort((1 + punch) * oenv, SMDISTORT_EXP, 2);
+	o *= oenv;
+	nenv = smenvg(&drum->noiseenvg, channel, false, ctl,
+	              noiseattack, 1, noisedecay, 0, noisedecay, 0);
+	nenv = smdistort((1 + punch) * nenv, SMDISTORT_EXP, 2);
+	n *= nenv;
+	y = o * toneamp + n * noiseamp;
+	y = smlowpass(&drum->filterlp, channel, y, cutoff, 1);
 
 	return y;
 }

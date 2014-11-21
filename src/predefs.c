@@ -137,3 +137,80 @@ struct smasynth *smasynth_create() {
 	return asynth;
 }
 
+void smdrum_destroy(struct smdrum *drum) {
+	sm2order_destroy(&drum->filterlp);
+	smenvg_destroy(&drum->pitchenvg);
+	smenvg_destroy(&drum->noiseenvg);
+	smenvg_destroy(&drum->toneenvg);
+	smsynth_destroy(&drum->osc);
+}
+
+static void __smdrum_destroy(struct smdrum *drum) {
+	smdrum_destroy(drum);
+	afree(drum, sizeof(struct smdrum));
+}
+
+int smdrum_init(struct smdrum *drum,
+                  void (*destroy)(struct smdrum *)) {
+	int r;
+
+	r = smsynth_init(&drum->osc, NULL);
+	if(r != 0) {
+		goto undo0;
+	}
+
+	r = smenvg_init(&drum->toneenvg, NULL);
+	if(r != 0) {
+		goto undo1;
+	}
+
+	r = smenvg_init(&drum->noiseenvg, NULL);
+	if(r != 0) {
+		goto undo2;
+	}
+
+	r = smenvg_init(&drum->pitchenvg, NULL);
+	if(r != 0) {
+		goto undo3;
+	}
+
+	r = sm2order_init(&drum->filterlp, NULL);
+	if(r != 0) {
+		goto undo4;
+	}
+
+	arcp_region_init(drum, (arcp_destroy_f) destroy);
+
+	return 0;
+
+undo4:
+	smenvg_destroy(&drum->pitchenvg);
+undo3:
+	smenvg_destroy(&drum->noiseenvg);
+undo2:
+	smenvg_destroy(&drum->toneenvg);
+undo1:
+	smsynth_destroy(&drum->osc);
+undo0:
+	return r;
+}
+
+struct smdrum *smdrum_create() {
+	struct smdrum *drum;
+	int r;
+
+	drum = amalloc(sizeof(struct smdrum));
+	if(drum == NULL) {
+		return NULL;
+	}
+
+	r = smdrum_init(drum, __smdrum_destroy);
+	if(r != 0) {
+		afree(drum, sizeof(struct smdrum));
+		return NULL;
+	}
+
+	return drum;
+}
+
+
