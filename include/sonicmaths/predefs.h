@@ -1,0 +1,180 @@
+/** @file predefs.h
+ * Predefs
+ *
+ * Predefined full synth modules.
+ */
+/*
+ * Copyright 2014 Evan Buswell
+ * 
+ * This file is part of Sonic Maths.
+ * 
+ * Sonic Maths is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, version 2.
+ * 
+ * Sonic Maths is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Sonic Maths.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+#ifndef SONICMATHS_PREDEFS_H
+#define SONICMATHS_PREDEFS_H 1
+
+#include <math.h>
+#include <atomickit/rcp.h>
+#include <sonicmaths/synth.h>
+#include <sonicmaths/sine.h>
+#include <sonicmaths/impulse-train.h>
+#include <sonicmaths/integrator.h>
+#include <sonicmaths/second-order.h>
+#include <sonicmaths/envelope-generator.h>
+#include <sonicmaths/bandpass.h>
+#include <sonicmaths/lowpass.h>
+
+#define SMASYNTH_NSYNTHS 4
+#define SMASYNTH_NINTGS 8
+
+struct smasynth {
+	struct arcp_region;
+	struct smsynth synth[4];
+	struct smintg intg[8];
+	struct smenvg aenvg;
+	struct smenvg fenvg;
+	struct sm2order filterlp;
+	struct sm2order filterres;
+	struct smsynth lfo;
+};
+
+enum smasynth_type {
+	SMNONE = 0x0,
+	SMSINE = 0x8,
+	SMSAW = 0x1,
+	SMBOLA = 0x2,
+	SMSQUARE = 0x5,
+	SMTRIANGLE = 0x6,
+	SMINTERFERENCE = 0x4
+};
+
+void smasynth_destroy(struct smasynth *asynth);
+
+int smasynth_init(struct smasynth *asynth,
+                  void (*destroy)(struct smasynth *));
+
+struct smasynth *smasynth_create(void);
+
+static inline int smasynth_redim(struct smasynth *asynth, int nchannels) {
+	int i, r;
+
+	for(i = 0; i < SMASYNTH_NSYNTHS; i++) {
+ 	       r = smsynth_redim(&asynth->synth[i], nchannels);
+	       if(r != 0) {
+		       return r;
+	       }
+	}
+
+	for(i = 0; i < SMASYNTH_NINTGS; i++) {
+		r = smintg_redim(&asynth->intg[i], nchannels);
+		if(r != 0) {
+			return r;
+		}
+	}
+
+	r = smenvg_redim(&asynth->aenvg, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = smenvg_redim(&asynth->fenvg, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = sm2order_redim(&asynth->filterlp, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = sm2order_redim(&asynth->filterres, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	r = smsynth_redim(&asynth->lfo, nchannels);
+	if(r != 0) {
+		return r;
+	}
+
+	return 0;
+}
+
+static inline float smasynth_osc(struct smasynth *asynth, int channel, int num,
+                                 float f, enum smasynth_type osc, float interphase) {
+	float y1;
+	float y2;
+
+	if(osc == SMNONE) {
+		return 0;
+	} else if(osc == SMSINE) {
+		return smsine(&asynth->synth[2 * num], channel, f, 0.0f);
+	} else {
+		y1 = smitrain(&asynth->synth[2 * num], channel, f, 0.0f);
+		y1 = f * smintg(&asynth->intg[4 * num], channel, y1);
+		if(osc & SMBOLA) {
+			y1 = f * smintg(&asynth->intg[4 * num + 1], channel, y1);
+		}
+		if(osc & SMINTERFERENCE) {
+			y2 = smitrain(&asynth->synth[2 * num + 1], channel, f, interphase);
+			y2 = f * smintg(&asynth->intg[4 * num + 2], channel, y2);
+			if(osc & SMBOLA) {
+				y2 = f * smintg(&asynth->intg[4 * num + 3], channel, y2);
+			}
+			return y1 + y2;
+		} else {
+			return y1;
+		}
+	}
+}
+
+static inline float smasynth(struct smasynth *asynth,
+                             int channel, float f, float ctl,
+                             enum smasynth_type osc1, float interphase1,
+                             float amp1, float detune1,
+                             enum smasynth_type osc2, float interphase2,
+                             float amp2, float detune2,
+                             float attack, float decay, float sustain, float release,
+                             float filtermin, float filtermax, float resonance,
+                             float lforate, float lfopitch, float lfofilter) {
+	float y, o, lfo, ff, fmin, fmax, fsus;
+
+	lfo = smsine(&asynth->lfo, channel, lforate, 0.0f);
+
+	o = amp1 * smasynth_osc(asynth, channel, 0,
+	                        f * powf(2, (detune1 + lfopitch * lfo)/12),
+	                        osc1, interphase1);
+	o += amp2 * smasynth_osc(asynth, channel, 1,
+	                         f * powf(2, (detune2 + lfopitch * lfo)/12),
+	                         osc2, interphase2);
+
+	fmin = f * powf(2, filtermin);
+	fsus = f * powf(2, filtermin + sustain * (filtermax - filtermin));
+	fmax = f * powf(2, filtermax);
+
+	ff = smenvg(&asynth->fenvg, channel, false, ctl,
+	            attack, fmax, decay, fsus, release, fmin);
+
+	ff *= powf(2, lfofilter * lfo);
+
+	y = smlowpass(&asynth->filterlp, channel, o, ff, 1);
+	y += resonance
+	     * smbandpass(&asynth->filterres, channel, o, ff, 1);
+	y *= smenvg(&asynth->aenvg, channel, false, ctl,
+	            attack, 1, decay, sustain, release, 0);
+
+	return y;
+}
+
+#endif

@@ -5,33 +5,19 @@
 #include <atomickit/atomic.h>
 #include <atomickit/malloc.h>
 #include <jack/jack.h>
-#include <sonicmaths/synth.h>
-#include <sonicmaths/impulse-train.h>
-#include <sonicmaths/sine.h>
-#include <sonicmaths/integrator.h>
+#include <sonicmaths/predefs.h>
 #include <sonicmaths/math.h>
 #include <sonicmaths/clock.h>
 #include <sonicmaths/key.h>
 #include <sonicmaths/sequence.h>
-#include <sonicmaths/envelope-generator.h>
-#include <sonicmaths/second-order.h>
-#include <sonicmaths/bandpass.h>
-#include <sonicmaths/lowpass.h>
-#include <sonicmaths/highpass.h>
-#include <sonicmaths/notch.h>
 
 struct state {
 	struct arcp_region;
 	jack_client_t *client;
 	jack_port_t *out_port;
 	struct smclock *clock;
-	struct smsynth *synth;
-	struct smsynth *lfo;
-	struct smintg *intg[2];
 	arcp_t seq;
-	struct smenvg *aenvg;
-	struct smenvg *fenvg;
-	struct sm2order *filter;
+	struct smasynth *asynth;
 };
 
 int process(jack_nframes_t nframes, void *arg __attribute__((unused))) {
@@ -39,60 +25,63 @@ int process(jack_nframes_t nframes, void *arg __attribute__((unused))) {
 	unsigned int i;
 	int j, nchannels;
 	float y, note, ctl, clock;
+	enum smasynth_type osc1, osc2;
+	float interphase1, interphase2, amp1, amp2, detune1, detune2,
+	      attack, decay, sustain, release,
+	      filtermin, filtermax, resonance,
+	      lforate, lfopitch, lfofilter;
 	struct state *cstate;
 	struct smseq *seq;
-	float sample_freq;
+	float sample_rate;
 
 	cstate = (struct state *) arcp_load(&state);
 	seq = (struct smseq *) arcp_load(&cstate->seq);
-
-	sample_freq = jack_get_sample_rate(cstate->client);
-
+	sample_rate = jack_get_sample_rate(cstate->client);
 	out = jack_port_get_buffer(cstate->out_port, nframes);
 
 	nchannels = seq->nchannels;
-	smsynth_redim(cstate->synth, nchannels);
-	smsynth_redim(cstate->lfo, nchannels);
-	smintg_redim(cstate->intg[0], nchannels);
-	smintg_redim(cstate->intg[1], nchannels);
-	smenvg_redim(cstate->aenvg, nchannels);
-	smenvg_redim(cstate->fenvg, nchannels);
-	sm2order_redim(cstate->filter, nchannels);
+	smasynth_redim(cstate->asynth, nchannels);
+
+	osc1 = SMSAW;
+	interphase1 = 0;
+	amp1 = 1;
+	detune1 = 0;
+
+	osc2 = SMSQUARE;
+	interphase2 = 0.25;
+	amp2 = 0.25;
+	detune2 = 0.1;
+
+	attack = smaths_normtime(sample_rate, 0.15);
+	decay = smaths_normtime(sample_rate, 0.5);
+	sustain = powf(2, -0.5);
+	release = smaths_normtime(sample_rate, 0.15);
+
+	filtermin = 1;
+	filtermax = 7;
+	resonance = 0.5;
+
+	lforate = smaths_normfreq(sample_rate, 5);
+
+	lfopitch = 0.1;
+	lfofilter = 0;
 
 	for(i = 0; i < nframes; i++) {
 		out[i] = 0.0f;
 		clock = smclock(cstate->clock,
-		                smaths_normfreq(sample_freq,
+		                smaths_normfreq(sample_rate,
 				                100.0f/60.0f));
 		for(j = 0; j < nchannels; j++) {
-			note = smseq(seq,
-			     	     j,
-				     clock,
-			     	     &ctl);
+			note = smseq(seq, j, clock, &ctl);
 			note = smkey(SMKEY_EQUAL,
-		             	     smaths_normfreq(sample_freq,
-					     	     SMKEY_C),
+		             	     smaths_normfreq(sample_rate, SMKEY_C),
 			     	     note);
-			y = smitrain(cstate->synth, j, note, 0.0f);
-			y = note * smintg(cstate->intg[0], j, y);
-			y = smlowpass(cstate->filter, j,
-			              y,
-			              smenvg(cstate->fenvg, j, true, ctl,
-			                     smaths_normtime(sample_freq, 0.25),
-			                     note * 16,
-			                     smaths_normtime(sample_freq, 1.0),
-			                     note * 3,
-			                     smaths_normtime(sample_freq, 1.0),
-			                     note * 3),
-			              1.0f);
-			y = y * smenvg(cstate->aenvg, j, false, ctl,
-			               smaths_normtime(sample_freq, 0.25),
-			               1.0f,
-			               smaths_normtime(sample_freq, 0.5),
-			               0.7,
-			               smaths_normtime(sample_freq, 0.15),
-			               0.0f);
-			y *= 0.5 * powf(1.3f, smsine(cstate->lfo, j, smaths_normfreq(sample_freq, 4.6f), 0.0f));
+			y = smasynth(cstate->asynth, j, note, ctl,
+			             osc1, interphase1, amp1, detune1,
+			             osc2, interphase2, amp2, detune2,
+			             attack, decay, sustain, release,
+			             filtermin, filtermax, resonance,
+			             lforate, lfopitch, lfofilter);
 			out[i] += 0.5f * y;
 		}
 	}
@@ -138,26 +127,18 @@ void sequence_file_err(const char *error) {
 }
 
 void init_synths() {
-	size_t i, j;
 	struct state *cstate = (struct state *) arcp_load(&state);
-	struct smseq *seq;
-	cstate->synth = smsynth_create();
+	cstate->asynth = smasynth_create();
 	cstate->clock = smclock_create();
-	smclock_set_time(cstate->clock,  -6.0f);
-	for(i = 0; i < 2; i++) {
-		cstate->intg[i] = smintg_create();
-	}
+	smclock_set_time(cstate->clock,  -5.0f);
 	arcp_init(&cstate->seq, NULL);
 	smseq_start_watch("daisybell.seq", &cstate->seq, sequence_file_err);
-	cstate->aenvg = smenvg_create();
-	cstate->fenvg = smenvg_create();
-	cstate->filter = sm2order_create();
-	cstate->lfo = smsynth_create();
+	sleep(1);
 }
 
 int main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
-	init_state();
-	init_synths();
-	init_jack();
+	// init_state();
+	// init_synths();
+	// init_jack();
 	return 0;
 }
