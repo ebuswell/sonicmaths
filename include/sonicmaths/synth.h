@@ -25,6 +25,7 @@
 
 #include <atomickit/rcp.h>
 #include <atomickit/malloc.h>
+#include <sonicmaths/math.h>
 
 /**
  * Structure for generic synth functions
@@ -75,7 +76,7 @@ static inline int smsynth_redim(struct smsynth *synth, int nchannels) {
 			return -1;
 		}
 		for(i = synth->nchannels; i < nchannels; i++) {
-			t[i] = t[i - 1];
+			t[i] = frandomf();
 		}
 		synth->nchannels = nchannels;
 		synth->t = t;

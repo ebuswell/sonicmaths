@@ -33,6 +33,9 @@ H(s) = (s/Q) / (s^2 + s/Q + 1)
 static inline float smbandpass_do(struct sm2order_matrix *matrix, float x,
                                   float f, float Q) {
 	float w, a, y;
+	if(f > 0.5f) {
+		f = 0.5f;
+	}
 	w = 2 * ((float) M_PI) * f;
 	a = sinf(w)/(2 * Q);
 

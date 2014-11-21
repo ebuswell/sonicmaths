@@ -27,7 +27,7 @@ int smsynth_init(struct smsynth *synth, void (*destroy)(struct smsynth *)) {
 	if(synth->t == NULL) {
 		return -1;
 	}
-	synth->t[0] = 0.0f;
+	synth->t[0] = frandomf();
 	synth->nchannels = 1;
 
 	arcp_region_init(synth, (arcp_destroy_f) destroy);

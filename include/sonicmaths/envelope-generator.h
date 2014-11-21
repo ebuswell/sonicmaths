@@ -78,7 +78,6 @@ enum smenvg_stage {
 struct smenvg_state {
 	enum smenvg_stage stage;
 	float y1;
-	float t;
 	bool release;
 };
 
@@ -135,59 +134,35 @@ static inline int smenvg_redim(struct smenvg *envg, int nchannels) {
 /* e^-pi, the base of the exponent and the fraction of the distance from the
  * origin to the target that will remain when this is considered to be
  * finished. */
-#define EXP_NEG_PI 0.0432139182637723f
+#define EXP_NEG_PI 0.043213918263772250f
 
-/* 1/(1-e^-pi), the magic number to adjust the approach rate such that the
+/* e^-pi/(1-e^-pi), the magic number to adjust the approach rate such that the
  * attack reaches its target in time. */
-#define ATTACK_MAGIC_ADJ 1.04516570536368f
+#define ATTACK_MAGIC_ADJ 0.045165705363684115f
 
 /**
  * Calculate the decay envelope value for a given target, previous value,
  * and total time.
  */
 static inline float smenvg_decay_exp(float x, float y1, float T) {
-	return x + powf(EXP_NEG_PI, 1/T) * (y1 - x);
+	return x - powf(EXP_NEG_PI, 1/T) * (x - y1);
 }
 
 /**
  * Calculate the attack envelope value for a given target, previous value,
- * time, and total time.
+ * start value, and total time.
  */
-static inline float smenvg_attack_exp(float x, float y1, float t, float T) {
-	return x
-	       - (x - y1) *
-	               (1 - ATTACK_MAGIC_ADJ * (1 - powf(EXP_NEG_PI, t)))
-	         / /*------------------------------------------------------*/
-	             (1 - ATTACK_MAGIC_ADJ * (1 - powf(EXP_NEG_PI, t-1/T)));
+static inline float smenvg_attack_exp(float x, float y0, float y1, float T) {
+	x += copysignf(x - y0, x - y1) * ATTACK_MAGIC_ADJ;
+	return smenvg_decay_exp(x, y1, T);
 }
 
 /**
- * Calculate the envelope value for a given target, previous value, time, and
- * total time.
+ * Calculate the envelope value for a given target, previous value, start
+ * value, and total time.
  */
-static inline float smenvg_stage_lin(float x, float y1, float t, float T) {
-	return y1 + (x - y1) / (T * (1 - t));
-}
-
-/**
- * Calculate the time given a current start, target, and output value,
- * exponential version.
- */
-static inline float smenvg_inverse_t_exp(float x, float o, float y1) {
-	return -logf(
-	             1 -
-	                          (y1 - o)
-	             / /*----------------------------*/
-	                 (ATTACK_MAGIC_ADJ * (x - o))
-	            ) / ((float) M_PI);
-}
-
-/**
- * Calculate the time given a current start, target, and output value,
- * linear version.
- */
-static inline float smenvg_inverse_t_lin(float x, float o, float y1) {
-	return (o - y1) / (o - x);
+static inline float smenvg_stage_lin(float x, float y0, float y1, float T) {
+	return y1 + copysignf(x - y0, x - y1) / T;
 }
 
 /**
@@ -200,22 +175,14 @@ static inline float smenvg(struct smenvg *envg, int channel,
                            float release_t, float release_a) {
 	struct smenvg_state *state = &envg->state[channel];
 	float x;
+	float y0;
 	float y;
 	float y1 = state->y1;
-	float t = state->t;
 	float T;
 	if(ctl > 0) {
 		/* attack event */
 		state->stage = ENVG_ATTACK;
 		state->release = false;
-		x = attack_a;
-		float o = release_a;
-		if((o < x && y1 > x)
-		   || (o > x && y1 < x)) {
-			o = -o;
-		}
-		t = linear ? smenvg_inverse_t_lin(x, o, y1)
-		           : smenvg_inverse_t_exp(x, o, y1);
 		goto start_attack;
 	} else if(ctl < 0) {
 		/* release event */
@@ -226,6 +193,7 @@ static inline float smenvg(struct smenvg *envg, int channel,
 	case ENVG_ATTACK:
 	start_attack:
 		x = attack_a;
+		y0 = release_a;
 		T = attack_t;
 		if(T == 0) {
 			if(isnormal(x) || x == 0) {
@@ -235,41 +203,35 @@ static inline float smenvg(struct smenvg *envg, int channel,
 			} else if(x == -INFINITY) {
 				y1 = -FLT_MAX;
 			} else {
-				y1 = 0.0f;
+				y1 = 0;
 			}
-			t = 0;
 			state->stage = ENVG_DECAY;
 			goto start_decay;
 		}
-		y = linear ? smenvg_stage_lin(x, y1, t, T)
-		           : smenvg_attack_exp(x, y1, t, T);
-		t += 1/T;
+		y = linear ? smenvg_stage_lin(x, y0, y1, T)
+		           : smenvg_attack_exp(x, y0, y1, T);
 		if((y <= x && x <= y1)
 		   || (y >= x && x >= y1)) {
 			y = x;
-			t = 0;
 			state->stage = ENVG_DECAY;
 		}
 		break;
 	case ENVG_DECAY:
 	start_decay:
 		x = sustain_a;
+		y0 = attack_a;
 		T = decay_t;
 		if(T == 0) {
 			state->stage = ENVG_SUSTAIN;
 			goto start_sustain;
 		}
-		y = linear ? smenvg_stage_lin(x, y1, t, T)
+		y = linear ? smenvg_stage_lin(x, y0, y1, T)
 		           : smenvg_decay_exp(x, y1, T);
-		t += 1/T;
-		if(linear) {
-			if((y <= x && x <= y1)
-			   || (y >= x && x >= y1)) {
-				state->stage = ENVG_SUSTAIN;
-				goto start_sustain;
-			}
-		} else if(state->release
-		          && t >= 1) {
+		if((y <= x && x <= y1)
+		   || (y >= x && x >= y1)) {
+			state->stage = ENVG_SUSTAIN;
+			goto start_sustain;
+		} else if(state->release) {
 			if(isnormal(y) || y == 0) {
 				y1 = y;
 			} else if(y == INFINITY) {
@@ -277,13 +239,10 @@ static inline float smenvg(struct smenvg *envg, int channel,
 			} else if(y == -INFINITY) {
 				y1 = -FLT_MAX;
 			} else {
-				y1 = 0.0f;
+				y1 = 0;
 			}
-			t = 0;
 			state->stage = ENVG_RELEASE;
 			goto start_release;
-		} else if(y == x) {
-			state->stage = ENVG_SUSTAIN;
 		}
 		break;
 	case ENVG_SUSTAIN:
@@ -297,24 +256,23 @@ static inline float smenvg(struct smenvg *envg, int channel,
 			} else if(y == -INFINITY) {
 				y1 = -FLT_MAX;
 			} else {
-				y1 = 0.0f;
+				y1 = 0;
 			}
-			t = 0;
 			state->stage = ENVG_RELEASE;
 			goto start_release;
 		}
 		break;
 	case ENVG_RELEASE:
 	start_release:
-		T = release_t;
 		x = release_a;
+		y0 = sustain_a;
+		T = release_t;
 		if(T == 0) {
 			state->stage = ENVG_FINISHED;
 			goto start_finished;
 		}
-		y = linear ? smenvg_stage_lin(x, y1, t, T)
+		y = linear ? smenvg_stage_lin(x, y0, y1, T)
 		           : smenvg_decay_exp(x, y1, T);
-		t += 1/T;
 		if((y <= x && x <= y1)
 		   || (y >= x && x >= y1)) {
 			y = x;
@@ -327,7 +285,6 @@ static inline float smenvg(struct smenvg *envg, int channel,
 		y = release_a;
 	}
 
-	state->t = t;
 	if(isnormal(y) || y == 0) {
 		state->y1 = y;
 	} else if(y == INFINITY) {
@@ -335,7 +292,7 @@ static inline float smenvg(struct smenvg *envg, int channel,
 	} else if(y == -INFINITY) {
 		state->y1 = -FLT_MAX;
 	} else {
-		state->y1 = 0.0f;
+		state->y1 = 0;
 	}
 
 	return y;

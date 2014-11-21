@@ -246,7 +246,7 @@ static int setup_inotify_watch(int notify_fd, char *filename) {
 }
 
 struct inotify_watch_args {
-	char *filename;
+	char filename[1024];
 	arcp_t *dest;
 	void (*error)(const char *);
 };
@@ -327,7 +327,7 @@ pthread_t smseq_start_watch(char *filename, arcp_t *dest,
 		return -1;
 	}
 
-	args->filename = filename;
+	strncpy(args->filename, filename, 1024);
 	args->dest = dest;
 	args->error = error;
 

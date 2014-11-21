@@ -33,6 +33,9 @@ H(s) = s^2 / (s^2 + s/Q + 1)
 static inline float smhighpass_do(struct sm2order_matrix *matrix, float x,
                                   float f, float Q) {
 	float w, a, cosw, y;
+	if(f > 0.5f) {
+		f = 0.5f;
+	}
 	w = 2 * ((float) M_PI) * f;
 	a = sinf(w)/(2 * Q);
 	cosw = cosf(w);

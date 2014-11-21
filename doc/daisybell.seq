@@ -1,0 +1,102 @@
+time: 3/4
+root: g4
+loop: true
+
+1 d5  g3
+2 .   .   d4 g4 b5
+3 .   .   d4 g4 b5
+1 b5  d3  x  x  x
+2 .   .   b4 d4 g4
+3 .   .   b4 d4 g4
+1 g4  b3  x  x  x
+2 .   .   g3 d4
+3 .   .   g3 d4
+1 d4  g2  x  x
+2 .   .   g3 b4
+3 x   .   g3 b4
+1 e4  c3  x  x
+2 f#4 x   e3 g3 c4
+3 g4  .   e3 g3 c4
+1 e4  c3  x  x  x
+2 .   x   e3 g3 c4
+3 g4  .   e3 g3 c4
+1 d4  g2  x  x  x
+2 .   d3
+3 .   b3
+1 .   g2
+2 .   x
+3 x
+1 a5  f#3
+2 .   x   a4 c4 d4
+3 .   .   a4 c4 d4
+1 d5  d3  x  x  x
+2 .   x   f#3 c4 d4
+3 .   .   f#3 c4 d4
+1 b5  g3  x   x  x
+2 .   .   d4 g4
+3 .   .   d4 g4
+1 g4  e3  x  x
+2 .   .   b4 e4
+3 x   .   b4 e4
+1 e4  a3  x  x
+2 f#4 x   g3 a4 c#4
+3 g4  .   g3 a4 c#4
+1 a5  a3  x  x  x
+2 .   x   g3 a4 c#4
+3 b5  .   g3 a4 c#4
+1 a5  d3  x  x  x
+2 .   x   f#3 a4 d4
+3 .   .   f#3 a4 d4
+1 .   d3  x   x  x
+2 x   x   f#3 a4 d4
+3 b5  .   f#3 a4 d4
+1 c5  f#3 x   x  x
+2 b5  x   a4 c4 d4
+3 a5  .   a4 c4 d4
+1 d5  d3  x  x  x
+2 .   x   f#3 c4 d4
+3 b5  .   f#3 c4 d4
+1 a5  g3  x   x  x
+. b5
+. a5
+2 g4  x   b4 d4
+3 .   .   b4 d4
+1 .   g3  x  x
+2 .   x   b4 d4
+3 a5  .   b4 d4
+1 b5  e3  x  x
+2 .   x   g3 b4 e4
+3 g4  .   g3 b4 e4
+1 e4  c3  x  x  x
+2 .   x   e3 g3 c4
+3 g4  .   e3 g3 c4
+1 e4  g2  x  x  x
+2 d4  x   d3 g3 b4
+3 .   .   d3 g3 b4
+1 .   f#2 x  x  x
+2 x   x   d3 a4 c4
+3 d4  .   d3 a4 c4
+1 g4  g2  x  x  x
+2 .   x   d3 g3 b4
+3 b5  .   d3 g3 b4
+1 a5  .   d3 a4 c4
+2 x   x   x  x  x
+1 g4  g2
+2 .   x   d3 g3 b4
+3 b5  .   d3 g3 b4
+1 a5  .   d3 a4 c4
+2 x   x   x  x  x
+3 b5
+. c5
+1 d5  g2
+2 b5  x   d3 g3 b4
+3 g4  .   d3 g3 b4
+1 a5  d2  x  x  x
+2 .   x   d3 f#3 c4
+3 d4  .   d3 f#3 c4
+1 g4  g3  x  x   x
+2 .   d3
+3 .   b3
+1 .   g2
+2 x   x
+3
