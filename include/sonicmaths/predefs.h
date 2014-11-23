@@ -36,6 +36,7 @@
 #include <sonicmaths/lowpass.h>
 #include <sonicmaths/noise.h>
 #include <sonicmaths/distortion.h>
+#include <sonicmaths/math.h>
 
 #define SMASYNTH_NSYNTHS 4
 #define SMASYNTH_NINTGS 8
@@ -141,40 +142,55 @@ static inline float smasynth_osc(struct smasynth *asynth, int channel, int num,
 	}
 }
 
+struct smasynth_param {
+	enum smasynth_type osc1;
+	float interphase1;
+	float amp1;
+	float detune1;
+	enum smasynth_type osc2;
+	float interphase2;
+	float amp2;
+	float detune2;
+	float attack;
+	float decay;
+	float sustain;
+	float release;
+	float filtermin;
+	float filtermax;
+	float resonance;
+	float lforate;
+	float lfopitch;
+	float lfofilter;
+};
+
 static inline float smasynth(struct smasynth *asynth,
                              int channel, float f, float ctl,
-                             enum smasynth_type osc1, float interphase1,
-                             float amp1, float detune1,
-                             enum smasynth_type osc2, float interphase2,
-                             float amp2, float detune2,
-                             float attack, float decay, float sustain, float release,
-                             float filtermin, float filtermax, float resonance,
-                             float lforate, float lfopitch, float lfofilter) {
+			     struct smasynth_param *p) {
 	float y, o, lfo, ff, fmin, fmax, fsus;
 
-	lfo = smsine(&asynth->lfo, channel, lforate, 0.0f);
+	lfo = smsine(&asynth->lfo, channel, p->lforate, 0.0f);
 
-	o = amp1 * smasynth_osc(asynth, channel, 0,
-	                        f * powf(2, (detune1 + lfopitch * lfo)/12),
-	                        osc1, interphase1);
-	o += amp2 * smasynth_osc(asynth, channel, 1,
-	                         f * powf(2, (detune2 + lfopitch * lfo)/12),
-	                         osc2, interphase2);
+	o = p->amp1 * smasynth_osc(asynth, channel, 0,
+	                           f * powf(2, (p->detune1 + p->lfopitch * lfo)/12),
+	                           p->osc1, p->interphase1);
+	o += p->amp2 * smasynth_osc(asynth, channel, 1,
+	                            f * powf(2, (p->detune2 + p->lfopitch * lfo)/12),
+	                            p->osc2, p->interphase2);
 
-	fmin = f * powf(2, filtermin);
-	fsus = f * powf(2, filtermin + sustain * (filtermax - filtermin));
-	fmax = f * powf(2, filtermax);
+	fmin = f * powf(2, p->filtermin);
+	fsus = f * powf(2, p->filtermin + p->sustain * (p->filtermax - p->filtermin));
+	fmax = f * powf(2, p->filtermax);
 
 	ff = smenvg(&asynth->fenvg, channel, false, ctl,
-	            attack, fmax, decay, fsus, release, fmin);
+	            p->attack, fmax, p->decay, fsus, p->release, fmin);
 
-	ff *= powf(2, lfofilter * lfo);
+	ff *= powf(2, p->lfofilter * lfo);
 
 	y = smlowpass(&asynth->filterlp, channel, o, ff, 1);
-	y += resonance
+	y += p->resonance
 	     * smbandpass(&asynth->filterres, channel, o, ff, 1);
 	y *= smenvg(&asynth->aenvg, channel, false, ctl,
-	            attack, 1, decay, sustain, release, 0);
+	            p->attack, 1, p->decay, p->sustain, p->release, 0);
 
 	return y;
 }
@@ -254,6 +270,22 @@ static inline float smdrum(struct smdrum *drum,
 	y = smlowpass(&drum->filterlp, channel, y, cutoff, 1);
 
 	return y;
+}
+
+static inline float smkick(struct smdrum *drum, int channel, float ctl, float sample_rate,
+                           float decay) {
+	return smdrum(drum, channel, smaths_normfreq(sample_rate, 58), ctl,
+	              smaths_normtime(sample_rate, 0.02), decay, 1,
+		      smaths_normtime(sample_rate, 0.001), decay, 0.55,
+	              -7, 1.5, smaths_normfreq(sample_rate, 165));
+}
+
+static inline float smsnare(struct smdrum *drum, int channel, float ctl, float sample_rate,
+                            float decay) {
+	return smdrum(drum, channel, smaths_normfreq(sample_rate, 220), ctl,
+	              smaths_normtime(sample_rate, 0.02), decay, 0.08,
+		      smaths_normtime(sample_rate, 0.02), decay, 0.7,
+	              -7, 1.5, smaths_normfreq(sample_rate, 10000));
 }
 
 #endif
