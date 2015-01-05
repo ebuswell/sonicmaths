@@ -63,6 +63,7 @@ release_a                release_a
 #include <string.h>
 #include <atomickit/malloc.h>
 #include <atomickit/rcp.h>
+#include <sonicmaths/math.h>
 
 /**
  * Envelope Generator State
@@ -131,9 +132,7 @@ static inline int smenvg_redim(struct smenvg *envg, int nchannels) {
 	return 0;
 }
 
-/* e^-pi, the base of the exponent and the fraction of the distance from the
- * origin to the target that will remain when this is considered to be
- * finished. */
+/* e^-pi, the base of the exponent for exponential decays. */
 #define EXP_NEG_PI 0.043213918263772250f
 
 /* e^-pi/(1-e^-pi), the magic number to adjust the approach rate such that the

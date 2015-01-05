@@ -101,6 +101,7 @@ static inline float notetof(char *note) {
 			break;
 		case 'g':
 		case 'G':
+		default:
 			tone = 7;
 			break;
 	}
@@ -123,22 +124,22 @@ static inline float notetof(char *note) {
 void *yyalloc(size_t bytes,
               void *yyscanner __attribute__((unused))) {
 	void *ret;
-	bytes += sizeof(void *);
+	bytes += sizeof(intmax_t);
 	ret = amalloc(bytes);
 	if(ret == NULL) {
 		return NULL;
 	}
 	*((size_t *) ret) = bytes;
-	return ret + sizeof(void *);
+	return ret + sizeof(intmax_t);
 }
 
 void *yyrealloc(void *ptr, size_t bytes,
                 void *yyscanner __attribute__((unused))) {
 	void *ret;
 	size_t size;
-	bytes += sizeof(void *);
+	bytes += sizeof(intmax_t);
 	if(ptr != NULL) {
-		ptr -= sizeof(void *);
+		ptr -= sizeof(intmax_t);
 		size = *((size_t *) ptr);
 	} else {
 		size = 0;

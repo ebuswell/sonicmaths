@@ -35,25 +35,41 @@ n=1
 #define SONICMATHS_IMPULSE_TRAIN_H 1
 
 #include <math.h>
+void sincosf(float phi, float *sin, float *cos);
 #include <sonicmaths/synth.h>
 
 /* Magic */
-#define M_MNTS 9634303.96f
-#define M_MNTS_NSQR 0.000322173509f
+#define M_A_2 8.040420309939047f
 
 static inline float smitrain_do(float f, float t) {
 	float n = floorf(1.0f / (2.0f * f)); /* the number of harmonics */
 	float wt_2 = ((float) M_PI) * t; /* half angular frequency */
-	float m_f = powf(M_MNTS, f);
-	float out = sinf(n * wt_2) * cosf((n + 1.0f) * wt_2) / sinf(wt_2);
+	float sinn1;
+	float cosn1;
+	float sinn;
+	float cosn;
+	float sinhn;
+	float coshn;
+	float sin1;
+	float cos1;
+	float sinh1;
+	float cosh1;
+	sincosf(wt_2, &sin1, &cos1);
+	sincosf(n * wt_2, &sinn, &cosn);
+	sincosf((n + 1.0f) * wt_2, &sinn1, &cosn1);
+	float out = sinn * cosn1 / sin1;
 	/* adjust top harmonics such that new harmonics gradually rise from
  	 * 0 */
-	out -= m_f * M_MNTS_NSQR
- 	       * (cosf(2.0f * wt_2)
-    	          - powf(m_f, n) * cosf((n + 1.0f) * 2.0f * wt_2)
-    	          + powf(m_f, n + 1.0f) * cosf(n * 2.0f * wt_2)
-    	          - m_f)
- 	       / (1.0f + m_f * m_f - 2.0f * m_f * cosf(2.0f * wt_2));
+	sinhn = sinhf(M_A_2 * n * f);
+	coshn = coshf(M_A_2 * n * f);
+	sinh1 = sinhf(M_A_2 * f);
+	cosh1 = coshf(M_A_2 * f);
+	out -= expf(M_A_2 * ((n + 1.0f) * f - 1.0f))
+	       * (cosn1*sinhn*cosn*sinh1*cos1
+		  + sinn1*sinhn*cosn*cosh1*sin1
+		  - sinn1*coshn*sinn*cosh1*cos1
+		  + cosn1*coshn*sinn*cosh1*sin1)
+	       / (sinh1*sinh1 + sin1*sin1);
 	return out;
 }
 

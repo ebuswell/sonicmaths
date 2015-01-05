@@ -25,6 +25,7 @@
 #define SONICMATHS_MATH_H 1
 
 #include <stdlib.h>
+#include <string.h>
 
 #define frandomf() ((float) random() / (((float) RAND_MAX) + 1.0f))
 #define randomf() ((double) random() / (((double) RAND_MAX) + 1.0))
@@ -35,6 +36,39 @@ static inline float smaths_normtime(float sample_rate, float t) {
 
 static inline float smaths_normfreq(float sample_rate, float f) {
 	return f / sample_rate;
+}
+
+static void hadamard(int N, float matrix[N][N]) {
+	if(N == 1) {
+		matrix[0][0] = 1;
+	} else {
+		int N_2 = N >> 1;
+		float submatrix[N_2][N_2];
+		int i, j;
+		float k;
+		hadamard(N_2, submatrix);
+		for(i = 0; i < N_2; i++) {
+			for(j = 0; j < N_2; j++) {
+				k = submatrix[i][j];
+				matrix[i][j] = k;
+				matrix[i + N_2][j] = k;
+				matrix[i][j + N_2] = k;
+				matrix[i + N_2][j + N_2] = -k;
+			}
+		}
+	}
+}
+
+static inline void matvecmul(int N, float matrix[N][N], float vector[N]) {
+	int i, j;
+	float ret[N];
+	memset(ret, 0, sizeof(float) * N);
+	for(i = 0; i < N; i++) {
+		for(j = 0; j < N; j++) {
+			ret[i] += matrix[i][j] * vector[j];
+		}
+	}
+	memcpy(vector, ret, sizeof(float) * N);
 }
 
 #endif /* ! SONICMATHS_MATH_H */
