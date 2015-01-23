@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2014 Evan Buswell
+ * Copyright 2015 Evan Buswell
  * Borrowed with minimal changes from
  * https://github.com/divfor/mt_rand/blob/master/mtrand.c
  *
- * Copyright (C) 1997--2004, Makoto Matsumoto, Takuji Nishimura, and Eric
- * Landry; All rights reserved.
+ * Copyright 1997--2004, Makoto Matsumoto, Takuji Nishimura, and Eric Landry;
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -12,9 +12,9 @@
  * 1. Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
  *
  * 3. The names of its contributors may not be used to endorse or promote
  * products derived from this software without specific prior written
@@ -38,13 +38,14 @@
  *
  * Reference: M. Matsumoto and T. Nishimura, "Mersenne Twister: A
  * 623-Dimensionally Equidistributed Uniform Pseudo-Random Number Generator",
- * ACM Transactions on Modeling and Computer Simulation, Vol. 8, No. 1, January
- * 1998, pp 3--30.
+ * ACM Transactions on Modeling and Computer Simulation, Vol. 8, No. 1,
+ * January 1998, pp 3--30.
  */
 
 #include <stdint.h>
-#include <atomickit/atomic.h>
-#include "mtrand.h"
+#include <stdatomic.h>
+#include <math.h>
+#include <sonicmaths/random.h>
 
 /* Period parameters */
 #define N 624
@@ -370,9 +371,9 @@ static uint32_t x[N] = {
 
 static atomic_int n;
 
-void mt_srand(uint32_t s) {
+void smrand_seed(uint32_t s) {
 	int i;
-	ak_store(&n, 0, mo_release);
+	atomic_store_explicit(&n, 0, memory_order_release);
 	x[0] = s;
 	for (i = 1; i < N; i++) {
 		x[i] = (0x6c078965 * (x[i - 1] ^ (x[i - 1] >> 30)) + i);
@@ -380,14 +381,15 @@ void mt_srand(uint32_t s) {
 }
 
 /* generates a random number on the interval [0,0xffffffff] */
-
-uint32_t mt_rand() {
+static inline uint32_t smrand_do() {
 	register uint32_t y, i, j;
-	i = ak_ldadd(&n, 1, mo_acq_rel);
-	if(i >= N) {
+	i = atomic_fetch_add_explicit(&n, 1, memory_order_acq_rel);
+	if (i >= N) {
 		int dummy = i + 1;
 		i -= N;
-		ak_cas_strong(&n, &dummy, i + 1, mo_acq_rel, mo_relaxed);
+		atomic_compare_exchange_strong_explicit(&n, &dummy, i + 1,
+							memory_order_acq_rel,
+							memory_order_relaxed);
 	}
 	j = (i + 1) % N;
 	/* Twisted feedback */
@@ -402,12 +404,46 @@ uint32_t mt_rand() {
 	return y;
 }
 
+uint32_t smrand() {
+	return smrand_do();
+}
+
 /* generates a random number on the interval (-1,1). */
-float mt_rand_float (void) {
+static inline float smrand_uniform_do() {
 	union {
 		float f;
 		uint32_t i;
 	} ret;
-	ret.i = (mt_rand() & (0x807fffff)) | 0x3F000000;
+	ret.i = (smrand_do() & (0x807fffff)) | 0x3F000000;
 	return ret.f;
+}
+
+float smrand_uniform() {
+	return smrand_uniform_do();
+}
+
+atomic_uint_fast32_t gaussian_extra = ATOMIC_VAR_INIT(0x7FC00000);
+
+float smrand_gaussian() {
+	float s, u1, u2, a;
+       	union {
+		int32_t i;
+		float f;
+	} b;
+	b.i = atomic_exchange_explicit(&gaussian_extra, 0x7FC00000,
+				       memory_order_acq_rel);
+	if(b.i != 0x7FC00000) {
+		return b.f;
+	}
+	do {
+		u1 = smrand_uniform_do();
+		u2 = smrand_uniform_do();
+		s = u1 * u1 + u2 * u2;
+	} while(s >= 1);
+	s = sqrtf(-2 * logf(s) / s);
+	a = s * u1;
+	b.f = s * u2;
+	atomic_store_explicit(&gaussian_extra, b.i,
+			      memory_order_release);
+	return a;
 }

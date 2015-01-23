@@ -4,28 +4,24 @@
  * The clock outputs a timestamp for each sample.
  */
 /*
- * Copyright 2014 Evan Buswell
+ * Copyright 2015 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
- * Sonic Maths is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, version 2.
+ * Sonic Maths is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, version 2.
  * 
- * Sonic Maths is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  * 
- * You should have received a copy of the GNU General Public License
- * along with Sonic Maths.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef SONICMATHS_CLOCK_H
 #define SONICMATHS_CLOCK_H 1
-
-#include <string.h>
-#include <atomickit/rcp.h>
 
 /**
  * Clock
@@ -33,22 +29,13 @@
  * The clock outputs a timestamp for each sample.
  */
 struct smclock {
-	struct arcp_region;
-	int nchannels; /** The number of channels of state we're currently
-	                *  storing. */
 	double t; /** The current time */
 };
 
 /**
  * Initialize clock
  */
-int smclock_init(struct smclock *clock,
-                 void (*destroy)(struct smclock *clock));
-
-/**
- * Create clock
- */
-struct smclock *smclock_create(void);
+int smclock_init(struct smclock *clock);
 
 /**
  * Destroy clock
@@ -64,7 +51,7 @@ static inline float smclock_get_time(struct smclock *clock) {
 }
 
 /**
- * Get the current time for a given channel and rate.
+ * Get the current time for a given rate.
  */
 static inline float smclock(struct smclock *clock, float rate) {
 	float ret = (float) clock->t;

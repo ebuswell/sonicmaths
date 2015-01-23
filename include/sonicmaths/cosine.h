@@ -1,6 +1,9 @@
+/** @file cosine.h
+ *
+ * Cosine Wave Synth
+ *
+ */
 /*
- * integrator.c
- * 
  * Copyright 2015 Evan Buswell
  * 
  * This file is part of Sonic Maths.
@@ -17,14 +20,18 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
-#include "sonicmaths/integrator.h"
+#ifndef SONICMATHS_COSINE_H
+#define SONICMATHS_COSINE_H 1
 
-int smintg_init(struct smintg *intg) {
-	memset(intg, 0, sizeof(struct smintg));
-	return 0;
+#include <math.h>
+#include <sonicmaths/osc.h>
+
+static inline float smcos(struct smosc *osc, float freq, float phase) {
+	float ret;
+	ret = cosf((float) (osc->t + (double) phase));
+	osc->t += (double) freq;
+	osc->t -= floor(osc->t);
+	return ret;
 }
 
-void smintg_destroy(struct smintg *intg __attribute__((unused))) {
-	/* Do nothing */
-}
+#endif /* ! SONICMATHS_COSINE_H */

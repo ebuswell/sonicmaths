@@ -1,10 +1,10 @@
 /*
- * Copyright 2014 Evan Buswell
+ * Copyright 2015 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
- * Sonic Maths is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
+ * Sonic Maths is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
  * Software Foundation, version 2.
  * 
  * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
@@ -12,14 +12,13 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  * 
- * You should have received a copy of the GNU General Public License along with
- * Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 %option					reentrant
 %option					warn nodefault
 %option					stack
-%option					noyyalloc noyyrealloc noyyfree
 %option					noyy_top_state noinput nounput
 %option					noyywrap
 %option					extra-type="bool"
@@ -28,7 +27,6 @@
 
 %{
 #include <stdbool.h>
-#include <atomickit/malloc.h>
 #include "sonicmaths/sequence.h"
 #include "sequence.h"
 #include "sequence-gram.h"
@@ -119,47 +117,4 @@ static inline float notetof(char *note) {
 		octave -= 4;
 	}
 	return tone + 12 * octave;
-}
-
-void *yyalloc(size_t bytes,
-              void *yyscanner __attribute__((unused))) {
-	void *ret;
-	bytes += sizeof(intmax_t);
-	ret = amalloc(bytes);
-	if(ret == NULL) {
-		return NULL;
-	}
-	*((size_t *) ret) = bytes;
-	return ret + sizeof(intmax_t);
-}
-
-void *yyrealloc(void *ptr, size_t bytes,
-                void *yyscanner __attribute__((unused))) {
-	void *ret;
-	size_t size;
-	bytes += sizeof(intmax_t);
-	if(ptr != NULL) {
-		ptr -= sizeof(intmax_t);
-		size = *((size_t *) ptr);
-	} else {
-		size = 0;
-	}
-	ret = arealloc(ptr, size, bytes);
-	if(ret == NULL) {
-		return NULL;
-	}
-	*((size_t *) ret) = bytes;
-	return ret + sizeof(void *);
-}
-
-void yyfree(void *ptr,
-            void *yyscanner __attribute__((unused))) {
-	size_t size;
-	if(ptr != NULL) {
-		ptr -= sizeof(void *);
-		size = *((size_t *) ptr);
-	} else {
-		size = 0;
-	}
-	afree(ptr, size);
 }

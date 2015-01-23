@@ -3,9 +3,8 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: sonicmaths
-Requires: atomickit, graphline, jack
 Description: Sonic Maths: Modular synthesis with mathematical precision
 Version: @version@
-Libs: -L${libdir} -lpthread -lsonicmaths
+Libs: -L${libdir} -lsonicmaths
 Libs.private: ${libdir}/libsonicmaths.a
-Cflags: -fplan9-extensions -I${includedir}
+Cflags: -I${includedir}

@@ -1,7 +1,7 @@
 .PHONY: shared static all install-headers install-pkgconfig install-shared \
-        install-static install-static-strip install-shared-strip \
-        install-all-static install-all-shared install-all-static-strip \
-        install-all-shared-strip install install-strip uninstall clean \
+	install-static install-static-strip install-shared-strip \
+	install-all-static install-all-shared install-all-static-strip \
+	install-all-shared-strip install install-strip uninstall clean \
         check-shared check-static check
 
 .SUFFIXES: .o .pic.o
@@ -10,22 +10,23 @@ include config.mk
 
 VERSION=0.2
 
-SRCS=src/synth.c src/integrator.c src/second-order.c src/key.c \
-     src/envelope-generator.c src/sequence-gram.c src/sequence-lex.c \
-     src/sequence.c src/clock.c src/predefs.c src/noise.c src/mtrand.c \
-     src/reverb.c
+SRCS=src/clock.c src/envelope-generator.c src/integrator.c src/key.c \
+     src/oscillator.c src/random.c src/reverb.c src/second-order.c \
+     src/sequence.c
 
 GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
 
-TESTSRCS=src/test.c
+TESTSRCS=
 
-HEADERS=include/sonicmaths/synth.h include/sonicmaths/sine.h \
-        include/sonicmaths/impulse-train.h include/sonicmaths/integrator.h \
-        include/sonicmaths/second-order.h include/sonicmaths/bandpass.h \
-        include/sonicmaths/highpass.h include/sonicmaths/lowpass.h \
-        include/sonicmaths/notch.h include/sonicmaths/envelope-generator.h \
-        include/sonicmaths/clock.h include/sonicmaths/math.h \
-	include/sonicmaths/sequence.h
+HEADERS=include/sonicmaths/bandpass.h include/sonicmaths/clock.h \
+        include/sonicmaths/cosine.h include/sonicmaths/distortion.h \
+        include/sonicmaths/envelope-generator.h \
+	include/sonicmaths/highpass.h include/sonicmaths/impulse-train.h \
+        include/sonicmaths/integrator.h include/sonicmaths/key.h \
+        include/sonicmaths/lowpass.h include/sonicmaths/math.h \
+	include/sonicmaths/notch.h include/sonicmaths/oscillator.h \
+	include/sonicmaths/random.h include/sonicmaths/reverb.h \
+	include/sonicmaths/second-order.h include/sonicmaths/sequence.h
 
 OBJS=${SRCS:.c=.o}
 PICOBJS=${SRCS:.c=.pic.o}
@@ -53,7 +54,8 @@ src/sequence-gram.h: src/sequence-gram.y
 	${CC} ${CFLAGS} -fPIC -c $< -o $@
 
 libsonicmaths.so: ${PICOBJS}
-	${CC} ${CFLAGS} -fPIC ${LDFLAGS} -shared ${PICOBJS} ${LIBS} -o libsonicmaths.so
+	${CC} ${CFLAGS} -fPIC ${LDFLAGS} -shared ${PICOBJS} ${LIBS} \
+	      -o libsonicmaths.so
 
 libsonicmaths.a: ${OBJS}
 	rm -f libsonicmaths.a

@@ -1,7 +1,15 @@
+/** @file random.h
+ *
+ * Random numbers
+ *
+ */
 /*
- * integrator.c
- * 
  * Copyright 2015 Evan Buswell
+ *
+ * Copied with minimal changes from
+ * https://github.com/divfor/mt_rand/blob/master/mtrand.h
+ *
+ * Copyright 2007-2009 The OpenTyrian Development Team
  * 
  * This file is part of Sonic Maths.
  * 
@@ -17,14 +25,16 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
-#include "sonicmaths/integrator.h"
+#ifndef SONICMATHS_RANDOM_H
+#define SONICMATHS_RANDOM_H 1
 
-int smintg_init(struct smintg *intg) {
-	memset(intg, 0, sizeof(struct smintg));
-	return 0;
-}
+#include <stdint.h>
 
-void smintg_destroy(struct smintg *intg __attribute__((unused))) {
-	/* Do nothing */
-}
+#define SMRAND_MAX 0xffffffffUL
+
+void smrand_seed(uint32_t s);
+uint32_t smrand(void);
+float smrand_uniform(void);
+float smrand_gaussian(void);
+
+#endif /* SONICMATHS_RANDOM_H */

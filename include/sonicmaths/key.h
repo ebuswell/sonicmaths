@@ -2,8 +2,7 @@
  *
  * Key
  *
- * Key translates notes into frequencies, scaled by the sample
- * frequency.
+ * Key translates notes into frequencies, scaled by the sample frequency.
  *
  * It does so according to an array which corresponds to the scale:
  *
@@ -12,24 +11,22 @@
 r * t[n % l] * 2
 @endverbatim
  *
- * where r is the root, t is the tuning array, n is the note, and l is
- * the length of the array.  Note that n / l is truncated integer
- * arithmetic, such that n / l is the integer amount, n % l the
- * remainder.
+ * where r is the root, t is the tuning array, n is the note, and l is the
+ * length of the array.  Note that n / l is truncated integer arithmetic, such
+ * that n / l is the integer amount, n % l the remainder.
  *
- * Additionally, notes may be fractional.  Fractional notes correspond
- * to the equation:
+ * Additionally, notes may be fractional.  Fractional notes correspond to the
+ * equation:
  *
  * @verbatim
            f
 p * (n / p)
 @endverbatim
  *
- * where p is the previous note, n is the next note, and f is the
- * fractional portion.
+ * where p is the previous note, n is the next note, and f is the fractional
+ * portion.
  *
- * Note that in the case of equal temperament, this all just reduces
- * to:
+ * Note that in the case of equal temperament, this all just reduces to:
  *
  * @verbatim
      n
@@ -37,30 +34,28 @@ r * 2
 @endverbatim
  *
  * Key comes with a number of pre-defined scales.  Minor, Major,
- * Equal-Tempered, and Pythagorean.  If you wish to define your own,
- * pass an array of fractional values between 1 and 2 that correspond
- * to the notes in your scale.  If you have a favorite somewhat
- * conventional scale that you think should be predefined, file a bug
- * or send an email with the fractional coefficients of each note, and
- * I'll probably add it.
+ * Equal-Tempered, and Pythagorean.  If you wish to define your own, pass an
+ * array of fractional values between 1 and 2 that correspond to the notes in
+ * your scale.  If you have a favorite somewhat conventional scale that you
+ * think should be predefined, file a bug or send an email with the fractional
+ * coefficients of each note, and I'll probably add it.
  */
 /*
- * Copyright 2014 Evan Buswell
+ * Copyright 2015 Evan Buswell
  * 
  * This file is part of Sonic Maths.
  * 
- * Sonic Maths is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, version 2.
+ * Sonic Maths is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, version 2.
  * 
- * Sonic Maths is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Sonic Maths is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  * 
- * You should have received a copy of the GNU General Public License
- * along with Sonic Maths.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef SONICMATHS_KEY_H
 #define SONICMATHS_KEY_H 1
@@ -182,13 +177,13 @@ struct smkey {
 #define SMKEY_A_FLAT 415.304697579945
 
 struct smkey_western {
-    size_t length;
-    float tuning[7];
+	size_t length;
+	float tuning[7];
 };
 
 struct smkey_chromatic {
-    size_t length;
-    float tuning[12];
+	size_t length;
+	float tuning[12];
 };
 
 /**
@@ -222,7 +217,7 @@ extern struct smkey_chromatic smkey_pythagorean;
  * this particular key.
  */
 static inline float smkey(struct smkey *key, float root, float note) {
-	if(key == SMKEY_EQUAL) {
+	if (key == SMKEY_EQUAL) {
 		return root * powf(2.0f, note/12.0f);
 	} else {
 		int key_len, n, m, e;
@@ -235,20 +230,20 @@ static inline float smkey(struct smkey *key, float root, float note) {
 		n = (int) n_f;
 		m = n % key_len;
 		e = n / key_len;
-		if(m < 0) {
+		if (m < 0) {
 			e--;
 			m = key_len + m;
 		}
 		freq = key->tuning[m];
-		if(f != 0) {
-			if(m == (key_len - 1)) {
+		if (f != 0) {
+			if (m == (key_len - 1)) {
 				freq *= powf(2/key->tuning[m], f);
 			} else {
 				freq *= powf(key->tuning[m + 1]/key->tuning[m],
-				             f);
+					     f);
 			}
 		}
-		if(e >= 0) {
+		if (e >= 0) {
 			return (freq * root * ((float) (1 << e)));
 		} else {
 			e = -e;
