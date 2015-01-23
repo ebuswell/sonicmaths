@@ -12,7 +12,8 @@ VERSION=0.2
 
 SRCS=src/clock.c src/envelope-generator.c src/integrator.c src/key.c \
      src/oscillator.c src/random.c src/reverb.c src/second-order.c \
-     src/sequence.c
+     src/sequence.c src/sequence-gram.c src/sequence-lex.c
+
 
 GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
 
