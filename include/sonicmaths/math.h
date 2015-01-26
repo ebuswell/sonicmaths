@@ -40,4 +40,16 @@ static inline float smaths_normfreq(float sample_rate, float f) {
 		   : x == -INFINITY ? -FLT_MAX		\
 		   : 0.0f)
 
+static inline float smaths_wsinc(float x, float n) {
+	float w1;
+	float w2;
+	w1 = (float) M_PI * (x - n / 2.0f);
+	if (w1 == 0.0f) {
+		return 1.0f;
+	}
+	w2 = 2.0f * w1 / n;
+	return (0.42f + 0.5f * cosf(w2) + 0.08f * cosf(2.0f * w2))
+		* sinf(w1) / w1;
+}
+
 #endif /* ! SONICMATHS_MATH_H */

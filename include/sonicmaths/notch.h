@@ -27,10 +27,13 @@ H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_NOTCH_H
 #define SONICMATHS_NOTCH_H 1
 
+#include <math.h>
+#include <float.h>
 #include <sonicmaths/second-order.h>
+#include <sonicmaths/math.h>
 
-static inline float smnotch_do(struct sm2order_matrix *matrix, float x,
-			       float f, float Q) {
+static inline float smnotch(struct sm2order *filter, float x,
+			    float f, float Q) {
 	float w, a, cosw2, y;
 	if (f > 0.5f) {
 		f = 0.5f;
@@ -39,29 +42,14 @@ static inline float smnotch_do(struct sm2order_matrix *matrix, float x,
 	a = sinf(w)/(2 * Q);
 	cosw2 = 2*cosf(w);
 
-	y = (x - cosw2 * matrix->x1 + matrix->x2
-	     + cosw2 * matrix->y1 - (1 - a) * matrix->y2)
+	y = (x - cosw2 * filter->x1 + filter->x2
+	     + cosw2 * filter->y1 - (1 - a) * filter->y2)
 	 / /*--------------------------------------------*/
 			     (1 + a);
-	matrix->x2 = matrix->x1;
-	matrix->x1 = x;
-	matrix->y2 = matrix->y1;
-	if (isnormal(y) || y == 0.0f) {
-		matrix->y1 = y;
-	} else if (y == INFINITY) {
-		matrix->y1 = FLT_MAX;
-	} else if (y == -INFINITY) {
-		matrix->y1 = -FLT_MAX;
-	} else {
-		matrix->y1 = 0.0f;
-	}
+	filter->x2 = filter->x1;
+	filter->x1 = x;
+	filter->y2 = filter->y1;
+	filter->y1 = SMNORM(y);
 	return y;
 }
-
-static inline float smnotch(struct sm2order *filter, int channel,
-			    float x, float f, float Q) {
-	return smnotch_do(&filter->matrix[channel], x, f, Q);
-}
-
-
 #endif /* ! SONICMATHS_NOTCH_H */

@@ -27,7 +27,10 @@ H(s) = 1 / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_LOWPASS_H
 #define SONICMATHS_LOWPASS_H 1
 
+#include <math.h>
+#include <float.h>
 #include <sonicmaths/second-order.h>
+#include <sonicmaths/math.h>
 
 static inline float smlowpass(struct sm2order *filter, float x,
 				 float f, float Q) {
@@ -44,7 +47,7 @@ static inline float smlowpass(struct sm2order *filter, float x,
 	filter->x2 = filter->x1;
 	filter->x1 = x;
 	filter->y2 = filter->y1;
-	filter->y1 = NORMF(y);
+	filter->y1 = SMNORM(y);
 	return y;
 }
 

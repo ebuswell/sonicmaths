@@ -27,8 +27,8 @@ H(s) = (s/Q) / (s^2 + s/Q + 1)
 #ifndef SONICMATHS_BANDPASS_H
 #define SONICMATHS_BANDPASS_H 1
 
-#define _ISOC99_SOURCE 1
 #include <math.h>
+#include <float.h>
 #include <sonicmaths/second-order.h>
 #include <sonicmaths/math.h>
 

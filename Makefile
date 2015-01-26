@@ -10,8 +10,8 @@ include config.mk
 
 VERSION=0.2
 
-SRCS=src/clock.c src/envelope-generator.c src/integrator.c src/key.c \
-     src/oscillator.c src/random.c src/reverb.c src/second-order.c \
+SRCS=src/clock.c src/delay.c src/envelope-generator.c src/integrator.c \
+     src/key.c src/oscillator.c src/random.c src/reverb.c src/second-order.c \
      src/sequence.c src/sequence-gram.c src/sequence-lex.c
 
 
@@ -20,14 +20,15 @@ GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
 TESTSRCS=
 
 HEADERS=include/sonicmaths/bandpass.h include/sonicmaths/clock.h \
-        include/sonicmaths/cosine.h include/sonicmaths/distortion.h \
-        include/sonicmaths/envelope-generator.h \
+        include/sonicmaths/cosine.h include/sonicmaths/delay.h \
+	include/sonicmaths/envelope-generator.h \
 	include/sonicmaths/highpass.h include/sonicmaths/impulse-train.h \
         include/sonicmaths/integrator.h include/sonicmaths/key.h \
-        include/sonicmaths/lowpass.h include/sonicmaths/math.h \
-	include/sonicmaths/notch.h include/sonicmaths/oscillator.h \
-	include/sonicmaths/random.h include/sonicmaths/reverb.h \
-	include/sonicmaths/second-order.h include/sonicmaths/sequence.h
+        include/sonicmaths/limit.h include/sonicmaths/lowpass.h \
+	include/sonicmaths/math.h include/sonicmaths/notch.h \
+	include/sonicmaths/oscillator.h include/sonicmaths/random.h \
+	include/sonicmaths/reverb.h include/sonicmaths/second-order.h \
+	include/sonicmaths/sequence.h
 
 OBJS=${SRCS:.c=.o}
 PICOBJS=${SRCS:.c=.pic.o}

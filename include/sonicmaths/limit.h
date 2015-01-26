@@ -1,9 +1,9 @@
-/** @file distortion.h
+/** @file limiter.h
  *
- * Distortion filter
+ * Limiter filter
  *
- * Limits input according to one of the following equations, where s is @c
- * sharpness, g is @c gain, and x is the original input.
+ * Limits ("distorts") input according to one of the following equations,
+ * where s is @c sharpness, g is @c gain, and x is the original input.
  *
  * Lower values of @c sharpness make the sound less "warm" and vice versa.
  *
@@ -54,21 +54,21 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_DISTORTION_H
-#define SONICMATHS_DISTORTION_H 1
+#ifndef SONICMATHS_LIMITER_H
+#define SONICMATHS_LIMITER_H 1
 
 #include <math.h>
 
-enum smdistort_kind {
-	SMDISTORT_EXP, SMDISTORT_HYP, SMDISTORT_ATAN
+enum smlimit_kind {
+	SMLIMIT_EXP, SMLIMIT_HYP, SMLIMIT_ATAN
 };
 
-static inline float smdistort(float x, enum smdistort_kind kind,
-			      float sharpness) {
+static inline float smlimit(float x, enum smlimit_kind kind,
+			    float sharpness) {
 	float factor;
 	switch (kind) {
 	default:
-	case SMDISTORT_EXP:
+	case SMLIMIT_EXP:
 		factor = logf(expf(sharpness) + 1);
 		if (x >= 0) {
 			return 1 - logf(expf(-sharpness * (x - 1)) + 1)
@@ -77,13 +77,13 @@ static inline float smdistort(float x, enum smdistort_kind kind,
 			return logf(expf(sharpness * (x + 1)) + 1) / factor
 			       - 1;
 		}
-	case SMDISTORT_HYP:
+	case SMLIMIT_HYP:
 		return x / powf(powf(fabs(x), sharpness) + 1,
 				1 / sharpness);
-	case SMDISTORT_ATAN:
+	case SMLIMIT_ATAN:
 		return 2 * atanf(sharpness * x)
 		       / ((float) M_PI);
 	}
 }
 
-#endif /* ! SONICMATHS_DISTORTION_H */
+#endif /* ! SONICMATHS_LIMITER_H */

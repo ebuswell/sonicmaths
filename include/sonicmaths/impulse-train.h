@@ -38,7 +38,8 @@ n=1
 #include <sonicmaths/oscillator.h>
 
 /* Magic */
-#define M_A_2 8.040420309939047f
+#define SMTRAIN_A 16.080840619878092
+#define EXP_NEG_A_2 0.0003221735089294733
 
 static inline float smitrain_do(float f, double t) {
 	float n = floorf(1.0f / (2.0f * f)); /* the number of harmonics */
