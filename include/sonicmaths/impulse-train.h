@@ -60,7 +60,7 @@ static inline float smitrain_do(float f, double t) {
 		  - expf(n * af) * cosf(n1 * wt)
 		  + expf(n1 * af) * cosf(n * wt)
 		  + expf(af))
-	       / (2.0f * (coshf(SMTRAIN_A * f) - coswt));
+	       / (2.0f * (coshf(af) - coswt));
 	return out;
 }
 

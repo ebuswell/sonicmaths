@@ -92,9 +92,6 @@ int smenvg_init(struct smenvg *envg);
  */
 void smenvg_destroy(struct smenvg *envg);
 
-/* e^-pi, the base of the exponent for exponential decays. */
-#define EXP_NEG_PI 0.043213918263772250f
-
 /* e^-pi/(1-e^-pi), the magic number to adjust the approach rate such that the
  * attack reaches its target in time. */
 #define ATTACK_MAGIC_ADJ 0.045165705363684115f
