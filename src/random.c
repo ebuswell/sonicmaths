@@ -408,14 +408,45 @@ uint32_t smrand() {
 	return smrand_do();
 }
 
+#define SIGNMASK  0x80000000
+#define EXPMASK   0x7f800000
+#define NMASK     0x007fffff
+#define GMASK     0x00400000
+#define EXPOFFSET 126
+#define FSIZE     32
+#define NSIZE     23
+
 /* generates a random number on the interval (-1,1). */
 static inline float smrand_uniform_do() {
 	union {
 		float f;
 		uint32_t i;
 	} ret;
-	ret.i = (smrand_do() & (0x807fffff)) | 0x3F000000;
-	return ret.f;
+	uint32_t extra;
+	uint32_t exp;
+	uint32_t sign;
+	ret.i = smrand_do();
+	sign = ret.i & SIGNMASK;
+	exp = 0;
+	extra = (ret.i & EXPMASK) >> NSIZE;
+	ret.i &= NMASK;
+	for (;;) {
+		if (ret.i & GMASK) {
+			ret.i |= ((EXPOFFSET - exp) << NSIZE) | sign;
+			return ret.f;
+		}
+		exp++;
+		if (exp > EXPOFFSET) {
+			ret.i |= sign;
+			return ret.f;
+		}
+		if ((exp - (FSIZE - NSIZE - 1)) % 32 == 0) {
+			extra = (uint32_t) frand_do();
+		}
+		ret.i <<= 1;
+		ret.i |= extra & 1;
+		extra >>= 1;
+	}
 }
 
 float smrand_uniform() {
