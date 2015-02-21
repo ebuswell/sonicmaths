@@ -28,6 +28,11 @@ int smverb_init(struct smverb *verb, size_t delaylen, size_t ndelays) {
 	if (verb->delays == NULL) {
 		return -1;
 	}
+	verb->tdist = malloc(sizeof(float) * ndelays);
+	if (verb->tdist == NULL) {
+		free(verb->delays);
+		return -1;
+	}
 	for (i = 0; i < ndelays; i++) {
 		r = smdelay_init(&verb->delays[i], delaylen);
 		if (r != 0) {
@@ -35,8 +40,10 @@ int smverb_init(struct smverb *verb, size_t delaylen, size_t ndelays) {
 				smdelay_destroy(&verb->delays[i]);
 			}
 			free(verb->delays);
+			free(verb->tdist);
 			return r;
 		}
+		verb->tdist[i] = smrand_gaussian();
 	}
 	return 0;
 }
@@ -47,4 +54,5 @@ void smverb_destroy(struct smverb *verb) {
 		smdelay_destroy(&verb->delays[i]);
 	}
 	free(verb->delays);
+	free(verb->tdist);
 }

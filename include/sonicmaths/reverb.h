@@ -31,6 +31,7 @@
 
 struct smverb {
 	size_t ndelays;
+	float *tdist;
 	struct smdelay *delays;
 };
 
@@ -48,13 +49,13 @@ static inline float smverb(struct smverb *verb, float x, float t,
 	for (fn = n, j = 0; fn > 1.0f; fn -= 1.0f, j++) {
 		i = verb->delays[j].i;
 		fy = smdelay_calc(&verb->delays[j],
-				  fabsf(smrand_fixed_gaussian(j) * tdev + t));
+				  fabsf(verb->tdist[j] * tdev + t));
 		y += fy;
 		verb->delays[j].x[i] = x + g * fy;
 	}
 	i = verb->delays[j].i;
 	fy = smdelay_calc(&verb->delays[j],
-			  fabsf(smrand_fixed_gaussian(j) * tdev + t));
+			  fabsf(verb->tdist[j] * tdev + t));
 	y += fn * fy;
 	verb->delays[j].x[i] = x + g * fy;
 

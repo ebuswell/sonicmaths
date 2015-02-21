@@ -47,55 +47,21 @@ int smdelay_init(struct smdelay *delay, size_t len);
 #include <m_pd.h>
 
 static inline float smdelay_calc(struct smdelay *delay, float t) {
-	float f, n, r;
-	struct {
-		float t0;
-		float t;
-		float f;
-		float n;
-		float r;
-		size_t i;
-	} debug;
+	float f, r;
 	size_t i;
 	size_t len;
-
-	debug.t0 = t;
 
 	/* setup */
 	i = delay->i;
 	len = delay->len;
 
-	/* calculate delay */
-	n = fminf(SMDELAY_WSINCN, 2.0f * floorf(t - 0.5f) + 1.0f);
-	if (n < 3.0f) {
-		/* linear interpolation */
-		f = t;
-		t = ceilf(t);
-		f = t - f;
-		i = ((i + len) - (size_t) t) % len;
-		r = delay->x[i++];
-		return r + f * (delay->x[i % len] - r);
-	} else {
-		/* windowed sinc interpolation */
-		t -= n / 2.0f;
-		f = t;
-		t = ceilf(t);
-		f = t - f;
-		i = ((i + len) - (size_t) (t + n)) % len;
-		debug.t = t;
-		debug.f = f;
-		debug.n = n;
-		debug.i = i;
-		r = 0.0f;
-		for (; f <= n; f += 1.0f, i = (i + 1) % len) {
-			r += delay->x[i] * smaths_wsinc(f, n);
-		}
-		if (delay->i == 1) {
-			post("t0: %f, t: %f, f: %f, n: %f, i: %zd, r: %f\n",
-			     debug.t0, debug.t, debug.f, debug.n, debug.i, r);
-		}
-	}
-	return r;
+	/* linear interpolation */
+	f = t;
+	t = ceilf(t);
+	f = t - f;
+	i = ((i + len) - (size_t) t) % len;
+	r = delay->x[i++];
+	return r + f * (delay->x[i % len] - r);
 }
 
 static inline float smdelay(struct smdelay *delay, float x, float t) {
