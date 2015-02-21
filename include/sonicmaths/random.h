@@ -29,6 +29,7 @@
 #define SONICMATHS_RANDOM_H 1
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define SMRAND_MAX 0xffffffffUL
 
@@ -36,5 +37,9 @@ void smrand_seed(uint32_t s);
 uint32_t smrand(void);
 float smrand_uniform(void);
 float smrand_gaussian(void);
+float smrand_fixed_uniform(size_t i);
+float smrand_fixed_gaussian(size_t i);
+int smrand_init_fixed_uniform(size_t len);
+int smrand_init_fixed_gaussian(size_t len);
 
 #endif /* SONICMATHS_RANDOM_H */

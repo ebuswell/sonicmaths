@@ -24,64 +24,47 @@
 #define SONICMATHS_REVERB_H 1
 
 #include <math.h>
-#include <float.h>
+#include <stddef.h>
 #include <sonicmaths/math.h>
-
-struct smverb_tank {
-	size_t i;
-	size_t len;
-	float f;
-	float tank[];
-};
+#include <sonicmaths/delay.h>
+#include <sonicmaths/random.h>
 
 struct smverb {
-	size_t ntanks;
-	struct smverb_tank **tanks;
+	size_t ndelays;
+	struct smdelay *delays;
 };
 
-/**
- * Destroy reverb
- */
+int smverb_init(struct smverb *verb, size_t delaylen, size_t ndelays);
+
 void smverb_destroy(struct smverb *verb);
 
-/**
- * Initialize reverb
- */
-int smverb_init(struct smverb *verb,
-		float echo_t, float echo_dev, size_t ntanks);
+static inline float smverb(struct smverb *verb, float x, float t,
+			   float tdev, float n, float g) {
+	float y = 0;
+	float fn;
+	float fy;
+	size_t i, j;
 
-static inline float smverb(struct smverb *verb, float x, float absorbtion) {
-	float ret, y, f1, f2;
-	struct smverb_tank *tank;
-	size_t i;
-
-	ret = 0.0f;
-
-	/* calculate ret, set per-tank feedback, and increment index */
-	for (i = 0; i < verb->ntanks; i++) {
-		tank = verb->tanks[i];
-		f1 = tank->tank[tank->i];
-		tank->i++;
-		tank->i %= tank->len;
-		f2 = tank->tank[tank->i];
-		y = f1 + tank->f * (f2 - f1); /* linear interpolation */
-		ret += y;
-		y *= absorbtion;
-		tank->tank[tank->i] = SMNORM(y); 
+	for (fn = n, j = 0; fn > 1.0f; fn -= 1.0f, j++) {
+		i = verb->delays[j].i;
+		fy = smdelay_calc(&verb->delays[j],
+				  fabsf(smrand_fixed_gaussian(j) * tdev + t));
+		y += fy;
+		verb->delays[j].x[i] = x + g * fy;
 	}
-	ret /= (float) verb->ntanks;
+	i = verb->delays[j].i;
+	fy = smdelay_calc(&verb->delays[j],
+			  fabsf(smrand_fixed_gaussian(j) * tdev + t));
+	y += fn * fy;
+	verb->delays[j].x[i] = x + g * fy;
 
-	/* add global feedback */
-	y = -2.0f * ret * absorbtion;
-	x += SMNORM(y);
-
-	/* set input */
-	for (i = 0; i < verb->ntanks; i++) {
-		tank = verb->tanks[i];
-		tank->tank[tank->i] += y;
+	fy = -2 * g * y / n;
+	for (j = 0; n > 0.0f; n -= 1.0f, j++) {
+		i = verb->delays[j].i;
+		verb->delays[j].x[i] += fy;
+		verb->delays[j].i = (i + 1) % verb->delays[j].len;
 	}
-
-	return ret;
+	return y;
 }
 
 #endif

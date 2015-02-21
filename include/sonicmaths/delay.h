@@ -46,7 +46,7 @@ int smdelay_init(struct smdelay *delay, size_t len);
 
 #include <m_pd.h>
 
-static inline float smdelay(struct smdelay *delay, float x, float t) {
+static inline float smdelay_calc(struct smdelay *delay, float t) {
 	float f, n, r;
 	struct {
 		float t0;
@@ -64,11 +64,6 @@ static inline float smdelay(struct smdelay *delay, float x, float t) {
 	/* setup */
 	i = delay->i;
 	len = delay->len;
-
-	/* set new value */
-	/* do this first, since delay could be < 1! */
-	delay->x[i] = x;
-	delay->i = (i + 1) % len;
 
 	/* calculate delay */
 	n = fminf(SMDELAY_WSINCN, 2.0f * floorf(t - 0.5f) + 1.0f);
@@ -101,6 +96,16 @@ static inline float smdelay(struct smdelay *delay, float x, float t) {
 		}
 	}
 	return r;
+}
+
+static inline float smdelay(struct smdelay *delay, float x, float t) {
+	size_t i;
+	float y;
+	i = delay->i;
+	delay->x[i] = x;
+	y = smdelay_calc(delay, t);
+       	delay->i = (i + 1) % delay->len;
+	return y;
 }
 
 #endif

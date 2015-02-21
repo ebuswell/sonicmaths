@@ -45,7 +45,9 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include <math.h>
-#include <sonicmaths/random.h>
+#include <stddef.h>
+#include "sonicmaths/random.h"
+#include <stdlib.h>
 
 /* Period parameters */
 #define N 624
@@ -371,6 +373,9 @@ static uint32_t x[N] = {
 
 static atomic_int n;
 
+float *fixed_gaussian = NULL;
+float *fixed_uniform = NULL;
+
 void smrand_seed(uint32_t s) {
 	int i;
 	atomic_store_explicit(&n, 0, memory_order_release);
@@ -378,6 +383,46 @@ void smrand_seed(uint32_t s) {
 	for (i = 1; i < N; i++) {
 		x[i] = (0x6c078965 * (x[i - 1] ^ (x[i - 1] >> 30)) + i);
 	}
+}
+
+int smrand_init_fixed_gaussian(size_t len) {
+	float *new_fixed_gaussian = malloc(sizeof(float) * len);
+	if (new_fixed_gaussian == NULL) {
+		return -1;
+	}
+	if (fixed_gaussian != NULL) {
+		free(fixed_gaussian);
+	}
+	fixed_gaussian = new_fixed_gaussian;
+	while (len--)
+	{
+		fixed_gaussian[len] = smrand_gaussian();
+	}
+	return 0;
+}
+
+int smrand_init_fixed_uniform(size_t len) {
+	float *new_fixed_uniform = malloc(sizeof(float) * len);
+	if (new_fixed_uniform == NULL) {
+		return -1;
+	}
+	if (fixed_uniform != NULL) {
+		free(fixed_uniform);
+	}
+	fixed_uniform = new_fixed_uniform;
+	while (len--)
+	{
+		fixed_uniform[len] = smrand_uniform();
+	}
+	return 0;
+}
+
+float smrand_fixed_uniform(size_t i) {
+	return fixed_uniform[i];
+}
+
+float smrand_fixed_gaussian(size_t i) {
+	return fixed_gaussian[i];
 }
 
 /* generates a random number on the interval [0,0xffffffff] */
@@ -424,24 +469,25 @@ static inline float smrand_uniform_do() {
 	} ret;
 	uint32_t extra;
 	uint32_t exp;
-	uint32_t sign;
+	uint32_t mask;
 	ret.i = smrand_do();
-	sign = ret.i & SIGNMASK;
+	mask = ret.i & (SIGNMASK | GMASK);
 	exp = 0;
 	extra = (ret.i & EXPMASK) >> NSIZE;
-	ret.i &= NMASK;
+	ret.i &= (NMASK ^ GMASK);
 	for (;;) {
 		if (ret.i & GMASK) {
-			ret.i |= ((EXPOFFSET - exp) << NSIZE) | sign;
+			ret.i ^= mask | ((EXPOFFSET - exp) << NSIZE);
 			return ret.f;
 		}
 		exp++;
 		if (exp > EXPOFFSET) {
-			ret.i |= sign;
+			ret.i ^= mask;
 			return ret.f;
 		}
-		if ((exp - (FSIZE - NSIZE - 1)) % 32 == 0) {
-			extra = (uint32_t) frand_do();
+		if ((exp - (FSIZE - NSIZE - 1 /* 1 for the sign */))
+		    % 32 == 0) {
+			extra = (uint32_t) smrand_do();
 		}
 		ret.i <<= 1;
 		ret.i |= extra & 1;

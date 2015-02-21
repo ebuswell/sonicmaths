@@ -58,9 +58,9 @@ static inline float smshift(struct smshift *shift, float x, float f) {
 	shift->osc.t += (double) f;
 	shift->osc.t -= floor(shift->osc.t);
 	if (f > 0.0f) {
-		x = smlowpass(&shift->filter, x, 0.9995 * (0.5f - f), 8);
+		x = smlowpass(&shift->filter, x, 0.9995f * (0.5f - f), 8);
 	} else {
-		x = smlowpass(&shift->filter, x, 0.9995 * 0.5f, 8);
+		x = smlowpass(&shift->filter, x, 0.9995f * 0.5f, 8);
 	}
 	smhilbert_pair(&shift->coeff, x, &y, &y_pi_2);
 	return y * c + y_pi_2 * s;

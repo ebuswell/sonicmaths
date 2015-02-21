@@ -4,7 +4,7 @@ LIBDIR?=${PREFIX}/lib
 DESTDIR?=
 PKGCONFIGDIR?=${LIBDIR}/pkgconfig
 
-CC?=gcc
+CC=gcc-4.9
 CFLAGS?=-O2
 LDFLAGS?=
 AR?=ar
