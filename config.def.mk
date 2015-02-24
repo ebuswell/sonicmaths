@@ -14,5 +14,5 @@ CFLAGS+=-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
         -Wdouble-promotion
 CFLAGS+=-Iinclude
 
-LIBS=-lm
-STATIC=-lm
+LIBS=-lfftw3f -lm
+STATIC=-lfftw3f -lm

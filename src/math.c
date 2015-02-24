@@ -18,6 +18,7 @@
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <string.h>
+#include <fftw3.h>
 #include "sonicmaths/math.h"
 
 int smhilbert_pair_init(struct smhilbert_pair *coeff) {
@@ -28,3 +29,17 @@ int smhilbert_pair_init(struct smhilbert_pair *coeff) {
 void smhilbert_pair_destroy(struct smhilbert_pair *coeff __attribute__((unused))) {
 	/* Do nothing */
 }
+
+fftwf_plan smstft_plan_create(float *x, size_t len) {
+	return fftwf_plan_r2r_1d(len, x, x, FFTW_R2HC, FFTW_MEASURE);
+}
+
+fftwf_plan smstft_inv_plan_create(float *x, size_t len) {
+	return fftwf_plan_r2r_1d(len, x, x, FFTW_HC2R, FFTW_MEASURE);
+}
+
+void smstft_plan_destroy(fftwf_plan plan) {
+	fftwf_destroy_plan(plan);
+}
+
+

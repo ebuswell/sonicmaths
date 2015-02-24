@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include <fftw3.h>
 
 /* e^-pi, the base of the exponent for exponential decays. */
 #define EXP_NEG_PI 0.043213918263772250f
@@ -107,5 +108,43 @@ static inline void smhilbert_pair(struct smhilbert_pair *coeff, float x,
 
 int smhilbert_pair_init(struct smhilbert_pair *coeff);
 void smhilbert_pair_destroy(struct smhilbert_pair *coeff);
+
+static inline void smsinwin(float *x, size_t len) {
+	float n = (float) len - 1;
+	float i = (float) M_PI / n;
+	while (len--) {
+		x[len] *= sinf(n * i);
+		n -= 1;
+	}
+}
+
+fftwf_plan smstft_plan_create(float *x, size_t len);
+
+fftwf_plan smstft_inv_plan_create(float *x, size_t len);
+
+void smstft_plan_destroy(fftwf_plan plan);
+
+static inline void smstft(fftwf_plan plan, float *x, size_t len) {
+	smsinwin(x, len);
+	fftwf_execute(plan);
+}
+
+static inline void smstft_inv(fftwf_plan plan, float *x, size_t len) {
+	size_t i;
+	float norm = 1 / (float) len;
+	fftwf_execute(plan);
+	smsinwin(x, len);
+	for (i = 0; i < len; i++) {
+		x[i] *= norm;
+	}
+}
+
+static inline float *smstft_alloc(size_t len) {
+	return (float *) fftwf_malloc(len * sizeof(float));
+}
+
+static inline void smstft_free(float *buf) {
+	fftwf_free(buf);
+}
 
 #endif /* ! SONICMATHS_MATH_H */
