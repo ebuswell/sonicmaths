@@ -1,9 +1,9 @@
-/** @file notch.h
+/** @file lowpass2.h
  *
- * Notch filter
+ * Lowpass filter
  *
  * @verbatim
-H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+H(s) = 1 / (s^2 + s/Q + 1)
 @endverbatim
  *
  */
@@ -24,32 +24,28 @@ H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_NOTCH_H
-#define SONICMATHS_NOTCH_H 1
+#ifndef SONICMATHS_LOWPASS2_H
+#define SONICMATHS_LOWPASS2_H 1
 
 #include <math.h>
-#include <float.h>
 #include <sonicmaths/second-order.h>
-#include <sonicmaths/math.h>
 
-static inline float smnotch(struct sm2order *filter, float x,
-			    float f, float Q) {
-	float w, a, cosw2, y;
-	if (f > 0.5f) {
-		f = 0.5f;
-	}
-	w = 2 * ((float) M_PI) * f;
-	a = sinf(w)/(2 * Q);
-	cosw2 = 2*cosf(w);
+void smlowpass2(struct sm2order *filter,
+	        int n, float *y, float *x, float *f, float *Q);
 
-	y = (x - cosw2 * filter->x1 + filter->x2
-	     + cosw2 * filter->y1 - (1 - a) * filter->y2)
-	 / /*--------------------------------------------*/
-			     (1 + a);
-	filter->x2 = filter->x1;
-	filter->x1 = x;
-	filter->y2 = filter->y1;
-	filter->y1 = SMNORM(y);
-	return y;
+static inline float smlowpass2v(float y1, float y2,
+				float x, float x1, float x2,
+				float f, float Q) {
+	float w, _2w, _Qw2, _4Q;
+	w = f > 0.49999f ? 2 * (float) M_PI * 0.49999f
+			 : 2 * (float) M_PI * f;
+	_2w = 2 * w;
+	_Qw2 = Q * w * w;
+	_4Q = 4 * Q;
+	return (  _Qw2		     * (x + 2 * x1 + x2)
+		- 2 * (_Qw2 - _4Q)   * y1
+		- (_4Q - _2w + _Qw2) * y2)
+	       / (_4Q + _2w + _Qw2);
 }
-#endif /* ! SONICMATHS_NOTCH_H */
+
+#endif /* ! SONICMATHS_LOWPASS2_H */

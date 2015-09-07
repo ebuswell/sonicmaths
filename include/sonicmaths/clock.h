@@ -43,20 +43,16 @@ int smclock_init(struct smclock *clock);
 void smclock_destroy(struct smclock *clock);
 
 static inline void smclock_set_time(struct smclock *clock, float time) {
-	clock->t = time;
+	clock->t = (double) time;
 }
 
 static inline float smclock_get_time(struct smclock *clock) {
-	return clock->t;
+	return (float) clock->t;
 }
 
 /**
  * Get the current time for a given rate.
  */
-static inline float smclock(struct smclock *clock, float rate) {
-	float ret = (float) clock->t;
-	clock->t += (double) rate;
-	return ret;
-}
+void smclock(struct smclock *clock, int n, float *y, float *rate);
 
 #endif /* ! SONICMATHS_CLOCK_H */

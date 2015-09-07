@@ -17,90 +17,133 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <fftw3.h>
-#include <string.h>
+#include <stdlib.h>
 #include "sonicmaths/math.h"
+#include "sonicmaths/lowpass2.h"
+#include "sonicmaths/highpass2.h"
 #include "sonicmaths/fdmodulator.h"
 
-int smfdmod_init(struct smfdmod *mod, size_t len) {
-	unsigned int i;
-	mod->R = len / 2;
-	mod->cbuf = mod->i = 0;
-	for (i = 0; i < 4; i++) {
-		mod->abuf[i] = smstft_alloc(len);
-		if (mod->abuf[i] == NULL) {
-			goto error1;
-		}
+int smfdmod_init(struct smfdmod *mod, int maxnbanks) {
+	mod->highf = calloc(maxnbanks - 1, sizeof(struct sm2order) * 4);
+	if (mod->highf == NULL) {
+		return -1;
 	}
-	for (i = 0; i < 2; i++) {
-		mod->bbuf[i] = smstft_alloc(len);
-		if (mod->bbuf[i] == NULL) {
-			goto error2;
-		}
+	mod->lowf = calloc(maxnbanks - 1, sizeof(struct sm2order) * 4);
+	if (mod->lowf == NULL) {
+		free(mod->highf);
+		return -1;
 	}
-	for (i = 0; i < 4; i++) {
-		mod->aplans[i] = smstft_plan_create(mod->abuf[i], len);
-		if (mod->aplans[i] == NULL) {
-			goto error3;
-		}
-	}
-	for (i = 0; i < 4; i++) {
-		mod->inv_plans[i] = smstft_inv_plan_create(mod->abuf[i], len);
-		if (mod->inv_plans[i] == NULL) {
-			goto error4;
-		}
-	}
-	for (i = 0; i < 2; i++) {
-		mod->bplans[i] = smstft_plan_create(mod->bbuf[i], len);
-		if (mod->bplans[i] == NULL) {
-			goto error5;
-		}
-	}
-	for (i = 0; i < 4; i++) {
-		memset(mod->abuf[i], 0, len * sizeof(float));
-	}
-	for (i = 0; i < 2; i++) {
-		memset(mod->bbuf[i], 0, len * sizeof(float));
-	}
-
+	/* adjust this so that we can use consistent indices for both
+	 * arrays */
+	mod->highf -= sizeof(struct sm2order) * 4;
+	mod->maxnbanks = maxnbanks;
 	return 0;
-
-error5:
-	while(i--) {
-		smstft_plan_destroy(mod->bplans[i]);
-	}
-	i = 4;
-error4:
-	while(i--) {
-		smstft_plan_destroy(mod->inv_plans[i]);
-	}
-	i = 4;
-error3:
-	while(i--) {
-		smstft_plan_destroy(mod->aplans[i]);
-	}
-	i = 2;
-error2:
-	while (i--) {
-		smstft_free(mod->bbuf[i]);
-	}
-	i = 4;
-error1:
-	while (i--) {
-		smstft_free(mod->abuf[i]);
-	}
-	return -1;
 }
 
 void smfdmod_destroy(struct smfdmod *mod) {
-	unsigned int i;
-	for (i = 0; i < 4; i++) {
-		smstft_free(mod->abuf[i]);
-		smstft_plan_destroy(mod->aplans[i]);
-		smstft_plan_destroy(mod->inv_plans[i]);
-	}
-	for (i = 0; i < 2; i++) {
-		smstft_free(mod->bbuf[i]);
-		smstft_plan_destroy(mod->bplans[i]);
-	}
+	free(mod->lowf);
+	free(mod->highf + sizeof(struct sm2order) * 4);
 }
+
+static float smfdmod_lr_lpv(struct sm2order *filter, float f, float x) {
+	float r;
+	r = smlowpass2v(filter[0].y1, filter[0].y2,
+			x, filter[0].x1, filter[0].x2,
+			f, SM2O_BUTTERWORTH_Q);
+	filter[0].y2 = filter[0].y1;
+	filter[0].y1 = r;
+	filter[0].x2 = filter[0].x1;
+	filter[0].x1 = x;
+	x = r;
+	r = smlowpass2v(filter[1].y1, filter[1].y2,
+			x, filter[1].x1, filter[1].x2,
+			f, SM2O_BUTTERWORTH_Q);
+	filter[1].y2 = filter[1].y1;
+	filter[1].y1 = r;
+	filter[1].x2 = filter[1].x1;
+	filter[1].x1 = x;
+	return r;
+}
+
+static float smfdmod_lr_hpv(struct sm2order *filter, float f, float x) {
+	float r;
+	r = smhighpass2v(filter[0].y1, filter[0].y2,
+			 x, filter[0].x1, filter[0].x2,
+			 f, SM2O_BUTTERWORTH_Q);
+	filter[0].y2 = filter[0].y1;
+	filter[0].y1 = r;
+	filter[0].x2 = filter[0].x1;
+	filter[0].x1 = x;
+	x = r;
+	r = smhighpass2v(filter[1].y1, filter[1].y2,
+			 x, filter[1].x1, filter[1].x2,
+			 f, SM2O_BUTTERWORTH_Q);
+	filter[1].y2 = filter[1].y1;
+	filter[1].y1 = r;
+	filter[1].x2 = filter[1].x1;
+	filter[1].x1 = x;
+	return r;
+}
+
+void smfdmod(struct smfdmod *mod, int n, float *y, float *a, float *b,
+	     float *bankwidth) {
+	float bankf, bankdelta, _y, a0, b0;
+	int i, j;
+	for (i = 0; i < n; i++) {
+		bankf = bankdelta = bankwidth[i];
+		a0 = a[i];
+		b0 = b[i];
+		_y = smfdmod_lr_lpv(mod->lowf[0][0], bankf, a0)
+		     * smfdmod_lr_lpv(mod->lowf[0][1], bankf, b0);
+		for (j = 1;
+		     bankf + bankdelta < 0.5f;
+		     j++, bankf += bankdelta) {
+			_y += (smfdmod_lr_hpv(mod->lowf[j][0],
+					      bankf,
+			       smfdmod_lr_lpv(mod->highf[j][0],
+					      bankf + bankdelta, a0)))
+			      * (smfdmod_lr_hpv(mod->lowf[j][1],
+					        bankf,
+			         smfdmod_lr_lpv(mod->highf[j][1],
+					        bankf + bankdelta, b0)));
+		}
+		_y += smfdmod_lr_hpv(mod->highf[j][0], bankf, a0)
+		      * smfdmod_lr_hpv(mod->highf[j][1], bankf, b0);
+		y[i] = _y;
+	}
+	mod->lowf[0][0][0].y1 = SMFPNORM(mod->lowf[0][0][0].y1);
+	mod->lowf[0][0][0].y2 = SMFPNORM(mod->lowf[0][0][0].y2);
+	mod->lowf[0][0][1].y1 = SMFPNORM(mod->lowf[0][0][1].y1);
+	mod->lowf[0][0][1].y2 = SMFPNORM(mod->lowf[0][0][1].y2);
+	mod->lowf[0][1][0].y1 = SMFPNORM(mod->lowf[0][1][0].y1);
+	mod->lowf[0][1][0].y2 = SMFPNORM(mod->lowf[0][1][0].y2);
+	mod->lowf[0][1][1].y1 = SMFPNORM(mod->lowf[0][1][1].y1);
+	mod->lowf[0][1][1].y2 = SMFPNORM(mod->lowf[0][1][1].y2);
+	for (i = 1; i < mod->maxnbanks - 1; i++) {
+		mod->lowf[i][0][0].y1 = SMFPNORM(mod->lowf[i][0][0].y1);
+		mod->lowf[i][0][0].y2 = SMFPNORM(mod->lowf[i][0][0].y2);
+		mod->lowf[i][0][1].y1 = SMFPNORM(mod->lowf[i][0][1].y1);
+		mod->lowf[i][0][1].y2 = SMFPNORM(mod->lowf[i][0][1].y2);
+		mod->lowf[i][1][0].y1 = SMFPNORM(mod->lowf[i][1][0].y1);
+		mod->lowf[i][1][0].y2 = SMFPNORM(mod->lowf[i][1][0].y2);
+		mod->lowf[i][1][1].y1 = SMFPNORM(mod->lowf[i][1][1].y1);
+		mod->lowf[i][1][1].y2 = SMFPNORM(mod->lowf[i][1][1].y2);
+		mod->highf[i][0][0].y1 = SMFPNORM(mod->highf[i][0][0].y1);
+		mod->highf[i][0][0].y2 = SMFPNORM(mod->highf[i][0][0].y2);
+		mod->highf[i][0][1].y1 = SMFPNORM(mod->highf[i][0][1].y1);
+		mod->highf[i][0][1].y2 = SMFPNORM(mod->highf[i][0][1].y2);
+		mod->highf[i][1][0].y1 = SMFPNORM(mod->highf[i][1][0].y1);
+		mod->highf[i][1][0].y2 = SMFPNORM(mod->highf[i][1][0].y2);
+		mod->highf[i][1][1].y1 = SMFPNORM(mod->highf[i][1][1].y1);
+		mod->highf[i][1][1].y2 = SMFPNORM(mod->highf[i][1][1].y2);
+	}
+	mod->highf[i][0][0].y1 = SMFPNORM(mod->highf[i][0][0].y1);
+	mod->highf[i][0][0].y2 = SMFPNORM(mod->highf[i][0][0].y2);
+	mod->highf[i][0][1].y1 = SMFPNORM(mod->highf[i][0][1].y1);
+	mod->highf[i][0][1].y2 = SMFPNORM(mod->highf[i][0][1].y2);
+	mod->highf[i][1][0].y1 = SMFPNORM(mod->highf[i][1][0].y1);
+	mod->highf[i][1][0].y2 = SMFPNORM(mod->highf[i][1][0].y2);
+	mod->highf[i][1][1].y1 = SMFPNORM(mod->highf[i][1][1].y1);
+	mod->highf[i][1][1].y2 = SMFPNORM(mod->highf[i][1][1].y2);
+}
+

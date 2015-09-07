@@ -43,6 +43,6 @@ int sm2order_init(struct sm2order *filter);
  */
 void sm2order_destroy(struct sm2order *filter);
 
-#define SMBUTTERWORTH_Q 0.70710678118654752f
+#define SM2O_BUTTERWORTH_Q 0.70710678118654752f
 
 #endif /* ! SONICMATHS_SECOND_ORDER_H */

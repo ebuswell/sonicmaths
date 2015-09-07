@@ -17,14 +17,47 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
 #include "sonicmaths/sample-and-hold.h"
 
+#define CTL_THRESHOLD 0.2f
+
 int smsandh_init(struct smsandh *sandh) {
-	memset(sandh, 0, sizeof(struct smsandh));
+	sandh->x = 0.0f;
+	sandh->ctl = SMSANDH_OFF;
 	return 0;
 }
 
 void smsandh_destroy(struct smsandh *sandh __attribute__((unused))) {
 	/* Do nothing */
+}
+
+void smsandh(struct smsandh *sandh, int n, float *y, float *x, float *ctl) {
+	int i;
+	float _x;
+	_x = sandh->x;
+	switch (sandh->ctl) {
+	case SMSANDH_ON:
+		for (i = 0; i < n; i++) {
+			if (ctl[i] < CTL_THRESHOLD) {
+				goto off;
+			}
+		on:
+			y[i] = _x;
+		}
+		sandh->ctl = SMSANDH_ON;
+		break;
+	case SMSANDH_OFF:
+	default:
+		for (i = 0; i < n; i++) {
+			if (ctl[i] > CTL_THRESHOLD) {
+				_x = x[i];
+				goto on;
+			}
+		off:
+			y[i] = _x;
+		}
+		sandh->ctl = SMSANDH_OFF;
+		break;
+	}
+	sandh->x = _x;
 }

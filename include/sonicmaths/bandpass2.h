@@ -1,9 +1,9 @@
-/** @file highpass.h
+/** @file bandpass2.h
  *
- * Highpass filter
+ * Bandpass filter
  *
  * @verbatim
-H(s) = s^2 / (s^2 + s/Q + 1)
+H(s) = (s/Q) / (s^2 + s/Q + 1)
 @endverbatim
  *
  */
@@ -24,33 +24,29 @@ H(s) = s^2 / (s^2 + s/Q + 1)
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_HIGHPASS_H
-#define SONICMATHS_HIGHPASS_H 1
+#ifndef SONICMATHS_BANDPASS2_H
+#define SONICMATHS_BANDPASS2_H 1
 
 #include <math.h>
-#include <float.h>
 #include <sonicmaths/second-order.h>
-#include <sonicmaths/math.h>
 
-static inline float smhighpass(struct sm2order *filter, float x,
-			       float f, float Q) {
-	float w, a, cosw, y;
-	if (f > 0.5f) {
-		f = 0.5f;
-	}
-	w = 2 * ((float) M_PI) * f;
-	a = sinf(w)/(2 * Q);
-	cosw = cosf(w);
+void smbandpass2(struct sm2order *filter,
+		 int n, float *y, float *x, float *f, float *Q);
 
-	y = ((1 + cosw)/(1 + a))
-	    * ((x + filter->x2)/2 - filter->x1) + (2*cosw/(1 + a))
-	    * filter->y1
-	    - ((1 - a)/(1 + a)) * filter->y2;
-	filter->x2 = filter->x1;
-	filter->x1 = x;
-	filter->y2 = filter->y1;
-	filter->y1 = SMNORM(y);
-	return y;
+static inline float smbandpass2v(float y1, float y2,
+				 float x, float x1 __attribute__((unused)),
+				 float x2,
+				 float f, float Q) {
+	float w, _2w, _Qw2, _4Q;
+	w = f > 0.49999f ? 2 * (float) M_PI * 0.49999f
+			 : 2 * (float) M_PI * f;
+	_2w = 2 * w;
+	_Qw2 = Q * w * w;
+	_4Q = 4 * Q;
+	return (  _2w		     * (x - x2)
+		- 2 * (_Qw2 - _4Q)   * y1
+		- (_4Q - _2w + _Qw2) * y2)
+	       / (_4Q + _2w + _Qw2);
 }
 
-#endif /* ! SONICMATHS_HIGHPASS_H */
+#endif /* ! SONICMATHS_BANDPASS2_H */

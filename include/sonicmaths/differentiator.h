@@ -1,16 +1,7 @@
-/** @file integrator.h
+/** @file differentiator.h
  *
- * Implements a simple integrator.
+ * Implements a simple differentiator.
  *
- * This takes the integral as if the sampled point output was reconstructed
- * through a windowed sinc function (Blackman seems to work best) 9 samples
- * wide---therefore there's a 4 1/2 sample delay. This is then integrated and
- * sampled with no filtering (theoretically unnecessary).  The integrator is
- * "leaky," so that DC should not be introduced.
- *
- * @verbatim
-y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
-    + (x2 + x6) * WSINC_2 + (x3 + x5) * WSINC_1 + x4 * WSINC_0
 @endverbatim
  *
  */
@@ -32,37 +23,35 @@ y = y1 * LEAKINESS + (x + x8) * WSINC_4 + (x1 + x7) * WSINC_3
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_INTEGRATOR_H
-#define SONICMATHS_INTEGRATOR_H 1
+#ifndef SONICMATHS_DIFFERENTIATOR_H
+#define SONICMATHS_DIFFERENTIATOR_H 1
 
 #include <sonicmaths/math.h>
 
 /**
  * Integration filter
  */
-struct smintg {
-	float y1;
+struct smdiff {
 	float x1;
 	float x2;
 	float x3;
 	float x4;
 	float x5;
-	float x6;
 };
 
 /**
  * Initialize integration filter
  */
-int smintg_init(struct smintg *intg);
+int smdiff_init(struct smdiff *diff);
 
 /**
  * Destroy integration filter
  */
-void smintg_destroy(struct smintg *intg);
+void smdiff_destroy(struct smdiff *diff);
 
 /**
  * Integrate the signal.
  */
-void smintg(struct smintg *intg, int n, float *y, float *x);
+void smdiff(struct smdiff *diff, int n, float *y, float *x);
 
-#endif /* ! SONICMATHS_INTEGRATOR_H */
+#endif /* ! SONICMATHS_DIFFERENTIATOR_H */

@@ -23,10 +23,6 @@
 #ifndef SONICMATHS_QUANTIZE_H
 #define SONICMATHS_QUANTIZE_H 1
 
-#include <math.h>
-
-static inline float smquant(float x, float i) {
-	return i == 0.0f ? x : roundf(x / i) * i;
-}
+void smquant(int n, float *y, float *x, float *res);
 
 #endif /* ! SONICMATHS_QUANTIZE_H */

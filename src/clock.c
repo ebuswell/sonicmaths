@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <math.h>
 #include "sonicmaths/clock.h"
 
 int smclock_init(struct smclock *clock) {
@@ -26,4 +27,17 @@ int smclock_init(struct smclock *clock) {
 
 void smclock_destroy(struct smclock *clock __attribute__((unused))) {
 	/* Do nothing */
+}
+
+void smclock(struct smclock *clock, int n, float *y, float *rate) {
+	int i;
+	double t = clock->t;
+	for (i = 0; i < n; i++) {
+		y[i] = t;
+		t += (double) rate[i];
+	}
+	clock->t = isfinite(t) ? t
+		 : isnan(t) ? 0.0
+		 : t > 0 ? HUGE_VAL
+		 : -HUGE_VAL;
 }

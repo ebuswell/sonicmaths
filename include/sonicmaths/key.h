@@ -60,196 +60,163 @@ r * 2
 #ifndef SONICMATHS_KEY_H
 #define SONICMATHS_KEY_H 1
 
-#include <stddef.h>
 #include <math.h>
+
+static inline float smn2fv(float note, float root) {
+	return root * powf(2.0f, note);
+}
+
+static inline float smf2nv(float freq, float root) {
+	return log2f(freq / root);
+}
+
+void smn2f(int n, float *freq, float *note, float *root);
+
+void smf2n(int n, float *note, float *freq, float *root);
 
 /**
  * Tuning array
  */
 struct smkey {
-	size_t len; /** The length of the array */
+	int len; /** The length of the array */
 	float tuning[]; /** The array */
 };
 
 /**
  * A
  */
-#define SMKEY_A 220.0
+#define SMKEYF_A 220.0
 
 /**
  * A#
  */
-#define SMKEY_A_SHARP 233.081880759045
+#define SMKEYF_A_SHARP 233.081880759045
 
 /**
  * Bb
  */
-#define SMKEY_B_FLAT 233.081880759045
+#define SMKEYF_B_FLAT 233.081880759045
 
 /**
  * B
  */
-#define SMKEY_B 246.941650628062
+#define SMKEYF_B 246.941650628062
 
 /**
  * Cb
  */
-#define SMKEY_C_FLAT 246.941650628062
+#define SMKEYF_C_FLAT 246.941650628062
 
 /**
  * C
  */
-#define SMKEY_C 261.625565300599
+#define SMKEYF_C 261.625565300599
 
 /**
  * B#
  */
-#define SMKEY_B_SHARP 261.625565300599
+#define SMKEYF_B_SHARP 261.625565300599
 
 /**
  * C#
  */
-#define SMKEY_C_SHARP 277.182630976872
+#define SMKEYF_C_SHARP 277.182630976872
 
 /**
  * Db
  */
-#define SMKEY_D_FLAT 277.182630976872
+#define SMKEYF_D_FLAT 277.182630976872
 
 /**
  * D
  */
-#define SMKEY_D 293.664767917408
+#define SMKEYF_D 293.664767917408
 
 /**
  * D#
  */
-#define SMKEY_D_SHARP 311.126983722081
+#define SMKEYF_D_SHARP 311.126983722081
 
 /**
  * Eb
  */
-#define SMKEY_E_FLAT 311.126983722081
+#define SMKEYF_E_FLAT 311.126983722081
 
 /**
  * E
  */
-#define SMKEY_E 329.62755691287
+#define SMKEYF_E 329.62755691287
 
 /**
  * Fb
  */
-#define SMKEY_F_FLAT 329.62755691287
+#define SMKEYF_F_FLAT 329.62755691287
 
 /**
  * F
  */
-#define SMKEY_F 349.228231433004
+#define SMKEYF_F 349.228231433004
 
 /**
  * E#
  */
-#define SMKEY_E_SHARP 349.228231433004
+#define SMKEYF_E_SHARP 349.228231433004
 
 /**
  * F#
  */
-#define SMKEY_F_SHARP 369.994422711634
+#define SMKEYF_F_SHARP 369.994422711634
 
 /**
  * Gb
  */
-#define SMKEY_G_FLAT 369.994422711634
+#define SMKEYF_G_FLAT 369.994422711634
 
 /**
  * G
  */
-#define SMKEY_G 391.995435981749
+#define SMKEYF_G 391.995435981749
 
 /**
  * G#
  */
-#define SMKEY_G_SHARP 415.304697579945
+#define SMKEYF_G_SHARP 415.304697579945
 
 /**
  * Ab
  */
-#define SMKEY_A_FLAT 415.304697579945
+#define SMKEYF_A_FLAT 415.304697579945
 
 struct smkey_western {
-	size_t length;
-	float tuning[7];
-};
-
-struct smkey_chromatic {
-	size_t length;
-	float tuning[12];
+	int len;
+	float tuning[13];
 };
 
 /**
- * Major tuning
+ * Harmonically just tuning
  */
-#define SMKEY_MAJOR ((struct smkey *) &smkey_major)
+#define SMKEY_HARMONIC ((struct smkey *) &smkey_harmonic)
 
-extern struct smkey_western smkey_major;
-
-/**
- * Minor tuning
- */
-#define SMKEY_MINOR ((struct smkey *) &smkey_minor)
-
-extern struct smkey_western smkey_minor;
+extern struct smkey_western smkey_harmonic;
 
 /**
  * Pythagorean tuning
  */
 #define SMKEY_PYTHAGOREAN ((struct smkey *) &smkey_pythagorean)
 
-extern struct smkey_chromatic smkey_pythagorean;
+extern struct smkey_western smkey_pythagorean;
 
 /**
- * Equal temperament
+ * Equal temperament tuning
  */
-#define SMKEY_EQUAL ((struct smkey *) NULL)
+#define SMKEY_EQUAL ((struct smkey *) &smkey_equal)
+
+extern struct smkey_western smkey_equal;
 
 /**
  * Transform a note into a frequency according to the semantics of
  * this particular key.
  */
-static inline float smkey(struct smkey *key, float root, float note) {
-	if (key == SMKEY_EQUAL) {
-		return root * powf(2.0f, note/12.0f);
-	} else {
-		int key_len, n, m, e;
-		float freq, f, n_f;
-
-		key_len = key->len;
-		f = note;
-		n_f = floorf(f);
-		f -= n_f;
-		n = (int) n_f;
-		m = n % key_len;
-		e = n / key_len;
-		if (m < 0) {
-			e--;
-			m = key_len + m;
-		}
-		freq = key->tuning[m];
-		if (f != 0) {
-			if (m == (key_len - 1)) {
-				freq *= powf(2/key->tuning[m], f);
-			} else {
-				freq *= powf(key->tuning[m + 1]/key->tuning[m],
-					     f);
-			}
-		}
-		if (e >= 0) {
-			return (freq * root * ((float) (1 << e)));
-		} else {
-			e = -e;
-			return (freq * root / ((float) (1 << e)));
-		}
-	}
-}
+void smkey(struct smkey *key, int n, float *freq, float *note, float *root);
 
 #endif /* ! SONICMATHS_KEY_H */

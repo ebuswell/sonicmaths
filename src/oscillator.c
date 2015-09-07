@@ -17,12 +17,11 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "sonicmaths/random.h"
 #include "sonicmaths/oscillator.h"
 
 int smosc_init(struct smosc *osc) {
-	osc->t = (smrand_uniform() + 1.0f) / 2.0f;
+	osc->t = (smrand_uniformv() + 1.0f) / 2.0f;
 	return 0;
 }
 

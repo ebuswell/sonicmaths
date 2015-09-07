@@ -1,5 +1,5 @@
 /*
- * math.c
+ * second-order.c
  * 
  * Copyright 2015 Evan Buswell
  * 
@@ -17,29 +17,29 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
-#include <fftw3.h>
 #include "sonicmaths/math.h"
+#include "sonicmaths/second-order.h"
+#include "sonicmaths/lowpass2.h"
 
-int smhilbert_pair_init(struct smhilbert_pair *coeff) {
-	memset(coeff, 0, sizeof(struct smhilbert_pair));
-	return 0;
+void smlowpass2(struct sm2order *filter,
+		int n, float *y, float *x, float *f, float *Q) {
+	int i;
+	float _y, y1, y2, _x, x1, x2;
+	x1 = filter->x1;
+	x2 = filter->x2;
+	y1 = filter->y1;
+	y2 = filter->y2;
+	for (i = 0; i < n; i++) {
+		_x = x[i];
+		_y = smlowpass2v(y1, y2, _x, x1, x2, f[i], Q[i]);
+		y2 = y1;
+		y1 = _y;
+		x2 = x1;
+		x1 = _x;
+		y[i] = _y;
+	}
+	filter->y1 = SMFPNORM(y1);
+	filter->y2 = SMFPNORM(y2);
+	filter->x1 = x1;
+	filter->x2 = x2;
 }
-
-void smhilbert_pair_destroy(struct smhilbert_pair *coeff __attribute__((unused))) {
-	/* Do nothing */
-}
-
-fftwf_plan smstft_plan_create(float *x, size_t len) {
-	return fftwf_plan_r2r_1d(len, x, x, FFTW_R2HC, FFTW_MEASURE);
-}
-
-fftwf_plan smstft_inv_plan_create(float *x, size_t len) {
-	return fftwf_plan_r2r_1d(len, x, x, FFTW_HC2R, FFTW_MEASURE);
-}
-
-void smstft_plan_destroy(fftwf_plan plan) {
-	fftwf_destroy_plan(plan);
-}
-
-

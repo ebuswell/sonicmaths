@@ -63,27 +63,8 @@ enum smlimit_kind {
 	SMLIMIT_EXP, SMLIMIT_HYP, SMLIMIT_ATAN
 };
 
-static inline float smlimit(float x, enum smlimit_kind kind,
-			    float sharpness) {
-	float factor;
-	switch (kind) {
-	default:
-	case SMLIMIT_EXP:
-		factor = logf(expf(sharpness) + 1);
-		if (x >= 0) {
-			return 1 - logf(expf(-sharpness * (x - 1)) + 1)
-				   / factor;
-		} else {
-			return logf(expf(sharpness * (x + 1)) + 1) / factor
-			       - 1;
-		}
-	case SMLIMIT_HYP:
-		return x / powf(powf(fabs(x), sharpness) + 1,
-				1 / sharpness);
-	case SMLIMIT_ATAN:
-		return 2 * atanf(sharpness * x)
-		       / ((float) M_PI);
-	}
-}
+
+void smlimit(enum smlimit_kind kind, int n, float *y, float *x,
+	     float *sharpness);
 
 #endif /* ! SONICMATHS_LIMITER_H */

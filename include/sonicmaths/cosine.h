@@ -23,15 +23,8 @@
 #ifndef SONICMATHS_COSINE_H
 #define SONICMATHS_COSINE_H 1
 
-#include <math.h>
 #include <sonicmaths/oscillator.h>
 
-static inline float smcos(struct smosc *osc, float freq, float phase) {
-	float ret;
-	ret = cosf((float) (2 * M_PI * (osc->t + (double) phase)));
-	osc->t += (double) freq;
-	osc->t -= floor(osc->t);
-	return ret;
-}
+void smcos(struct smosc *osc, int n, float *y, float *f, float *phi);
 
 #endif /* ! SONICMATHS_COSINE_H */

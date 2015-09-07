@@ -4,73 +4,60 @@
 	install-all-shared-strip install install-strip uninstall clean \
         check-shared check-static check
 
-.SUFFIXES: .o .pic.o
+.SUFFIXES: .o
 
 include config.mk
 
-VERSION=0.2
+VERSION=0.3
 
-SRCS=src/clock.c src/delay.c src/envelope-generator.c src/fdmodulator.c \
-     src/integrator.c src/key.c src/lag.c src/math.c src/oscillator.c \
+SRCS=src/bandpass2.c src/bandstop2.c src/clock.c src/cosine.c src/delay.c \
+     src/differentiator.c src/envelope-generator.c src/fdmodulator.c \
+     src/highpass2.c src/impulse-train.c src/integrator.c src/key.c \
+     src/lag.c src/limit.c src/lowpass2.c src/oscillator.c src/quantize.c \
      src/random.c src/reverb.c src/sample-and-hold.c src/second-order.c \
-     src/sequence.c src/sequence-gram.c src/sequence-lex.c src/shifter.c
-
-GENSRCS=src/sequence-gram.c src/sequence-lex.c src/sequence-gram.h
+     src/shifter.c
 
 TESTSRCS=
 
-HEADERS=include/sonicmaths/bandpass.h include/sonicmaths/clock.h \
-        include/sonicmaths/cosine.h include/sonicmaths/delay.h \
-	include/sonicmaths/envelope-generator.h \
-	include/sonicmaths/fdmodulator.h include/sonicmaths/highpass.h \
-	include/sonicmaths/impulse-train.h include/sonicmaths/integrator.h \
-	include/sonicmaths/key.h include/sonicmaths/lag.h \
-	include/sonicmaths/limit.h include/sonicmaths/lowpass.h \
-	include/sonicmaths/math.h include/sonicmaths/notch.h \
-	include/sonicmaths/oscillator.h include/sonicmaths/quantize.h \
-	include/sonicmaths/random.h include/sonicmaths/reverb.h \
-	include/sonicmaths/sample-and-hold.h \
-	include/sonicmaths/second-order.h include/sonicmaths/sequence.h \
-	include/sonicmaths/shifter.h
+HEADERS=sonicmaths/bandpass2.h sonicmaths/bandstop2.h sonicmaths/clock.h \
+	sonicmaths/cosine.h sonicmaths/delay.h sonicmaths/differentiator.h \
+	sonicmaths/envelope-generator.h sonicmaths/fdmodulator.h \
+	sonicmaths/highpass2.h sonicmaths/impulse-train.h \
+	sonicmaths/integrator.h sonicmaths/key.h sonicmaths/lag.h \
+	sonicmaths/limit.h sonicmaths/lowpass2.h sonicmaths/math.h \
+	sonicmaths/oscillator.h sonicmaths/quantize.h sonicmaths/random.h \
+	sonicmaths/reverb.h sonicmaths/sample-and-hold.h \
+	sonicmaths/second-order.h sonicmaths/shifter.h sonicmaths.h
 
 OBJS=${SRCS:.c=.o}
-PICOBJS=${SRCS:.c=.pic.o}
 TESTOBJS=${TESTSRCS:.c=.o}
 
 MAJOR=${shell echo ${VERSION}|cut -d . -f 1}
 
-.SECONDARY: ${GENSRCS}
+VERSIONSUFFIX=${shell echo 'prefix${SHAREDSUFFIX}suffix' \
+	        | sed -e 's/${VERSIONPOS}/.${VERSION}/' -e 's/prefix//g' -e 's/suffix//g'}
+MAJORSUFFIX=${shell echo 'prefix${SHAREDSUFFIX}suffix' \
+	      | sed -e 's/${VERSIONPOS}/.${MAJOR}/' -e 's/prefix//g' -e 's/suffix//g'}
 
 all: shared sonicmaths.pc
-
-src/sequence-lex.c: src/sequence-lex.l src/sequence-gram.h
-	${LEX} ${LEXFLAGS} -P smseq_ -o $@ $<
-
-src/sequence-gram.c: src/sequence-gram.y
-	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
-
-src/sequence-gram.h: src/sequence-gram.y
-	${YACC} ${YACCFLAGS} -p smseq_ -d -o $@ $<
 
 .c.o:
 	${CC} ${CFLAGS} -c $< -o $@
 
-.c.pic.o:
-	${CC} ${CFLAGS} -fPIC -c $< -o $@
+libsonicmaths${SHAREDSUFFIX}: ${OBJS}
+	${CC} ${CFLAGS} -fPIC ${LDFLAGS} -shared ${OBJS} ${LIBS} \
+	      -o libsonicmaths${SHAREDSUFFIX}
 
-libsonicmaths.so: ${PICOBJS}
-	${CC} ${CFLAGS} -fPIC ${LDFLAGS} -shared ${PICOBJS} ${LIBS} \
-	      -o libsonicmaths.so
+libsonicmaths${STATICSUFFIX}: ${OBJS}
+	rm -f libsonicmaths${STATICSUFFIX}
+	${AR} ${ARFLAGS}c libsonicmaths${STATICSUFFIX} ${OBJS}
+	ranlib libsonicmaths${STATICSUFFIX}
 
-libsonicmaths.a: ${OBJS}
-	rm -f libsonicmaths.a
-	${AR} ${ARFLAGS}c libsonicmaths.a ${OBJS}
-
-unittest-shared: libsonicmaths.so ${TESTOBJS}
+unittest-shared: libsonicmaths${SHAREDSUFFIX} ${TESTOBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -L`pwd` -Wl,-rpath,`pwd` \
 	      ${TESTOBJS} ${LIBS} -lsonicmaths -o unittest-shared
 
-unittest-static: libsonicmaths.a ${TESTOBJS}
+unittest-static: libsonicmaths${STATICSUFFIX} ${TESTOBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -static -L`pwd` \
 	      ${TESTOBJS} ${STATIC} -lsonicmaths -o unittest-static
 
@@ -81,13 +68,16 @@ sonicmaths.pc: sonicmaths.pc.in config.mk Makefile
 	    -e 's!@version@!${VERSION}!g' \
 	    sonicmaths.pc.in >sonicmaths.pc
 
-shared: libsonicmaths.so
+shared: libsonicmaths${SHAREDSUFFIX}
 
-static: libsonicmaths.a
+static: libsonicmaths${STATICSUFFIX}
 
 install-headers:
 	(umask 022; mkdir -p ${DESTDIR}${INCLUDEDIR}/sonicmaths)
-	install -m 644 -t ${DESTDIR}${INCLUDEDIR}/sonicmaths ${HEADERS}
+	for HEADER in ${HEADERS}; do \
+		install -m 644 include/$$HEADER \
+			${DESTDIR}${INCLUDEDIR}/$$HEADER; \
+	done
 
 install-pkgconfig: sonicmaths.pc
 	(umask 022; mkdir -p ${DESTDIR}${PKGCONFIGDIR})
@@ -95,25 +85,27 @@ install-pkgconfig: sonicmaths.pc
 
 install-shared: shared
 	(umask 022; mkdir -p ${DESTDIR}${LIBDIR})
-	install -m 755 libsonicmaths.so \
-	        ${DESTDIR}${LIBDIR}/libsonicmaths.so.${VERSION}
-	ln -frs ${DESTDIR}${LIBDIR}/libsonicmaths.so.${VERSION} \
-	        ${DESTDIR}${LIBDIR}/libsonicmaths.so.${MAJOR}
-	ln -frs ${DESTDIR}${LIBDIR}/libsonicmaths.so.${VERSION} \
-	        ${DESTDIR}${LIBDIR}/libsonicmaths.so
+	install -m 755 libsonicmaths${SHAREDSUFFIX} \
+	        ${DESTDIR}${LIBDIR}/libsonicmaths${VERSIONSUFFIX}
+	(cd ${DESTDIR}${LIBDIR}; \
+	 ln -fs libsonicmaths${VERSIONSUFFIX} \
+	        libsonicmaths${MAJORSUFFIX}; \
+	 ln -fs libsonicmaths${VERSIONSUFFIX} \
+	        libsonicmaths${SHAREDSUFFIX})
 
 install-static: static
 	(umask 022; mkdir -p ${DESTDIR}${LIBDIR})
-	install -m 644 libsonicmaths.a ${DESTDIR}${LIBDIR}/libsonicmaths.a
+	install -m 644 libsonicmaths${STATICSUFFIX} \
+		${DESTDIR}${LIBDIR}/libsonicmaths${STATICSUFFIX}
 
 install-shared-strip: install-shared
-	strip --strip-unneeded ${DESTDIR}${LIBDIR}/libsonicmaths.so.${VERSION}
+	strip --strip-unneeded ${DESTDIR}${LIBDIR}/libsonicmaths${VERSIONSUFFIX}
 
 install-static-strip: install-static
-	strip --strip-unneeded ${DESTDIR}${LIBDIR}/libsonicmaths.a
+	strip --strip-unneeded ${DESTDIR}${LIBDIR}/libsonicmaths${STATICSUFFIX}
 
 install-all-static: static sonicmaths.pc install-static install-headers \
-                    install-pkgconfig
+		    install-pkgconfig
 
 install-all-shared: shared sonicmaths.pc install-shared install-headers \
                     install-pkgconfig
@@ -127,20 +119,21 @@ install: install-all-shared
 install-strip: install-all-shared-strip
 
 uninstall: 
-	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths.so.${VERSION}
-	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths.so.${MAJOR}
-	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths.so
-	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths.a
+	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths${VERSIONSUFFIX}
+	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths${MAJORSUFFIX}
+	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths${SHAREDSUFFIX}
+	rm -f ${DESTDIR}${LIBDIR}/libsonicmaths${STATICSUFFIX}
 	rm -f ${DESTDIR}${PKGCONFIGDIR}/sonicmaths.pc
 	rm -rf ${DESTDIR}${INCLUDEDIR}/sonicmaths
+	for HEADER in ${HEADERS}; do \
+		rm -f ${DESTDIR}${INCLUDEDIR}/$$HEADER; \
+	done
 
 clean:
 	rm -f sonicmaths.pc
-	rm -f libsonicmaths.so
-	rm -f libsonicmaths.a
-	rm -f ${GENSRCS}
+	rm -f libsonicmaths${SHAREDSUFFIX}
+	rm -f libsonicmaths${STATICSUFFIX}
 	rm -f ${OBJS}
-	rm -f ${PICOBJS}
 	rm -f ${TESTOBJS}
 	rm -f unittest-shared
 	rm -f unittest-static

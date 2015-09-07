@@ -25,14 +25,12 @@
 #ifndef SONICMATHS_LAG_H
 #define SONICMATHS_LAG_H 1
 
-#include <stdbool.h>
-#include <sonicmaths/math.h>
-#include <sonicmaths/lag.h>
-
 /**
  * Lag Filter
  */
 struct smlag {
+	float x1; /** The target value */
+	float xo; /** The originating value */
 	float y1; /** The previous value */
 };
 
@@ -46,22 +44,8 @@ void smlag_destroy(struct smlag *lag);
  */
 int smlag_init(struct smlag *lag);
 
-static inline float smlag(struct smlag *lag, float x, float t, bool linear) {
-	float y1 = lag->y1;
-	float y;
-	if (t == 0.0f) {
-		y = x;
-	} else if (linear) {
-		y = y1 + copysignf(1 / t, x - y1);
-		if ((y <= x && x <= y1)
-		    || (y >= x && x >= y1)) {
-			y = x;
-		}
-	} else {
-		y = x - powf(EXP_NEG_PI, 1/t) * (x - y1);
-	}
-	lag->y1 = SMNORM(y);
-	return y;
-}
+void smlag(struct smlag *lag, int n, float *y, float *x, float *t);
+
+void smlage(struct smlag *lag, int n, float *y, float *x, float *t);
 
 #endif

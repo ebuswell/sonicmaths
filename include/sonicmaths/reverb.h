@@ -23,49 +23,23 @@
 #ifndef SONICMATHS_REVERB_H
 #define SONICMATHS_REVERB_H 1
 
-#include <math.h>
-#include <stddef.h>
-#include <sonicmaths/math.h>
-#include <sonicmaths/delay.h>
-#include <sonicmaths/random.h>
-
-struct smverb {
-	size_t ndelays;
-	float *tdist;
-	struct smdelay *delays;
+struct smverb_delay {
+	int i;
+	float *x;
 };
 
-int smverb_init(struct smverb *verb, size_t delaylen, size_t ndelays);
+struct smverb {
+	int ndelays;
+	int delaylen;
+	float *tdist;
+	struct smverb_delay *delays;
+};
+
+int smverb_init(struct smverb *verb, int delaylen, int ndelays);
 
 void smverb_destroy(struct smverb *verb);
 
-static inline float smverb(struct smverb *verb, float x, float t,
-			   float tdev, float n, float g) {
-	float y = 0;
-	float fn;
-	float fy;
-	size_t i, j;
-
-	for (fn = n, j = 0; fn > 1.0f; fn -= 1.0f, j++) {
-		i = verb->delays[j].i;
-		fy = smdelay_calc(&verb->delays[j],
-				  fabsf(verb->tdist[j] * tdev + t));
-		y += fy;
-		verb->delays[j].x[i] = x + g * fy;
-	}
-	i = verb->delays[j].i;
-	fy = smdelay_calc(&verb->delays[j],
-			  fabsf(verb->tdist[j] * tdev + t));
-	y += fn * fy;
-	verb->delays[j].x[i] = x + g * fy;
-
-	fy = -2 * g * y / n;
-	for (j = 0; n > 0.0f; n -= 1.0f, j++) {
-		i = verb->delays[j].i;
-		verb->delays[j].x[i] += fy;
-		verb->delays[j].i = (i + 1) % verb->delays[j].len;
-	}
-	return y;
-}
+void smverb(struct smverb *verb, int n, float *y, float *x, float *t,
+	    float *tdev, float *g);
 
 #endif

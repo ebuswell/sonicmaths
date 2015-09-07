@@ -20,9 +20,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "sonicmaths/delay.h"
 
-int smdelay_init(struct smdelay *delay, size_t len) {
+int smdelay_init(struct smdelay *delay, int len) {
 	delay->len = len;
 	delay->i = 0;
 	delay->x = malloc(sizeof(float) * len);
@@ -36,4 +37,45 @@ int smdelay_init(struct smdelay *delay, size_t len) {
 
 void smdelay_destroy(struct smdelay *delay) {
 	free(delay->x);
+}
+
+void smtapdelay(struct smdelay *delay, int n, int ntaps, float **y, float *x,
+		float **t) {
+	int i, j, di, dlen, ti;
+	float tf, tn, _y;
+	di = delay->i;
+	dlen = delay->len;
+	for (i = 0; i < n; i++) {
+		delay->x[di] = x[i];
+		for (j = 0; j < ntaps; j++) {
+			tf = t[j][i];
+			tn = ceilf(tf);
+			tf = tn - tf;
+			ti = ((di + dlen) - (int) tn) % dlen;
+			_y = delay->x[ti];
+			_y += tf * (delay->x[(ti + 1) % dlen] - _y);
+			y[j][i] = _y;
+		}
+		di = (di + 1) % dlen;
+	}
+	delay->i = di;
+}
+
+void smdelay(struct smdelay *delay, int n, float *y, float *x, float *t) {
+	int i, di, dlen, ti;
+	float tf, tn, _y;
+	di = delay->i;
+	dlen = delay->len;
+	for (i = 0; i < n; i++) {
+		delay->x[di] = x[i];
+		tf = t[i];
+		tn = ceilf(tf);
+		tf = tn - tf;
+		ti = ((di + dlen) - (int) tn) % dlen;
+		_y = delay->x[ti];
+		_y += tf * (delay->x[(ti + 1) % dlen] - _y);
+		y[i] = _y;
+		di = (di + 1) % dlen;
+	}
+	delay->i = di;
 }

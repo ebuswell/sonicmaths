@@ -27,7 +27,19 @@
 #include <sonicmaths/math.h>
 #include <sonicmaths/oscillator.h>
 #include <sonicmaths/second-order.h>
-#include <sonicmaths/lowpass.h>
+
+struct smhilbert_pair_sect {
+	float x1;
+	float x2;
+	float y1;
+	float y2;
+};
+
+struct smhilbert_pair {
+	struct smhilbert_pair_sect sect[2][4];
+	float y1;
+};
+
 
 /**
  * Frequency Shift Filter
@@ -51,19 +63,6 @@ void smshift_destroy(struct smshift *shift);
 /**
  * Perform a frequency shift.
  */
-static inline float smshift(struct smshift *shift, float x, float f) {
-	float s, c, y, y_pi_2;
-	s = sinf(2 * M_PI * shift->osc.t);
-	c = cosf(2 * M_PI * shift->osc.t);
-	shift->osc.t += (double) f;
-	shift->osc.t -= floor(shift->osc.t);
-	if (f > 0.0f) {
-		x = smlowpass(&shift->filter, x, 0.9995f * (0.5f - f), 8);
-	} else {
-		x = smlowpass(&shift->filter, x, 0.9995f * 0.5f, 8);
-	}
-	smhilbert_pair(&shift->coeff, x, &y, &y_pi_2);
-	return y * c + y_pi_2 * s;
-}
+void smshift(struct smshift *shift, int n, float *y, float *x, float *f);
 
 #endif /* ! SONICMATHS_SHIFTER_H */

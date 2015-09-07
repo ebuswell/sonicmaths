@@ -45,9 +45,7 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include <math.h>
-#include <stddef.h>
 #include "sonicmaths/random.h"
-#include <stdlib.h>
 
 /* Period parameters */
 #define N 624
@@ -371,10 +369,7 @@ static uint32_t x[N] = {
 	0x070d3196,	0x37062a7e
 };/* the array for the state vector */
 
-static atomic_int n;
-
-float *fixed_gaussian = NULL;
-float *fixed_uniform = NULL;
+static atomic_uint_fast32_t n = ATOMIC_VAR_INIT(~((uint32_t) 0));
 
 void smrand_seed(uint32_t s) {
 	int i;
@@ -385,57 +380,10 @@ void smrand_seed(uint32_t s) {
 	}
 }
 
-int smrand_init_fixed_gaussian(size_t len) {
-	float *new_fixed_gaussian = malloc(sizeof(float) * len);
-	if (new_fixed_gaussian == NULL) {
-		return -1;
-	}
-	if (fixed_gaussian != NULL) {
-		free(fixed_gaussian);
-	}
-	fixed_gaussian = new_fixed_gaussian;
-	while (len--)
-	{
-		fixed_gaussian[len] = smrand_gaussian();
-	}
-	return 0;
-}
-
-int smrand_init_fixed_uniform(size_t len) {
-	float *new_fixed_uniform = malloc(sizeof(float) * len);
-	if (new_fixed_uniform == NULL) {
-		return -1;
-	}
-	if (fixed_uniform != NULL) {
-		free(fixed_uniform);
-	}
-	fixed_uniform = new_fixed_uniform;
-	while (len--)
-	{
-		fixed_uniform[len] = smrand_uniform();
-	}
-	return 0;
-}
-
-float smrand_fixed_uniform(size_t i) {
-	return fixed_uniform[i];
-}
-
-float smrand_fixed_gaussian(size_t i) {
-	return fixed_gaussian[i];
-}
-
 /* generates a random number on the interval [0,0xffffffff] */
 static inline uint32_t smrand_do() {
 	register uint32_t y, i, j;
-	i = atomic_fetch_add_explicit(&n, 1, memory_order_acq_rel);
-	if (i >= N) {
-		int dummy = i + 1;
-		i -= N;
-		atomic_compare_exchange_strong_explicit(&n, &dummy, i + 1,
-							memory_order_acq_rel,
-							memory_order_relaxed);
-	}
+	i = atomic_fetch_add_explicit(&n, 1, memory_order_acq_rel) % N;
 	j = (i + 1) % N;
 	/* Twisted feedback */
 	y = x[i] = x[i < N - M ? i + M : i + M - N]
@@ -449,59 +397,28 @@ static inline uint32_t smrand_do() {
 	return y;
 }
 
-uint32_t smrand() {
+uint32_t smrandv() {
 	return smrand_do();
 }
 
-#define SIGNMASK  0x80000000
-#define EXPMASK   0x7f800000
-#define NMASK     0x007fffff
-#define GMASK     0x00400000
-#define EXPOFFSET 126
-#define FSIZE     32
-#define NSIZE     23
-
-/* generates a random number on the interval (-1,1). */
+/* generates a random number on the interval [-1,1]. */
 static inline float smrand_uniform_do() {
-	union {
-		float f;
-		uint32_t i;
-	} ret;
-	uint32_t extra;
-	uint32_t exp;
-	uint32_t mask;
-	ret.i = smrand_do();
-	mask = ret.i & (SIGNMASK | GMASK);
-	exp = 0;
-	extra = (ret.i & EXPMASK) >> NSIZE;
-	ret.i &= (NMASK ^ GMASK);
-	for (;;) {
-		if (ret.i & GMASK) {
-			ret.i ^= mask | ((EXPOFFSET - exp) << NSIZE);
-			return ret.f;
-		}
-		exp++;
-		if (exp > EXPOFFSET) {
-			ret.i ^= mask;
-			return ret.f;
-		}
-		if ((exp - (FSIZE - NSIZE - 1 /* 1 for the sign */))
-		    % 32 == 0) {
-			extra = (uint32_t) smrand_do();
-		}
-		ret.i <<= 1;
-		ret.i |= extra & 1;
-		extra >>= 1;
-	}
+	return 2 * (float) smrand_do() / (float) (SMRAND_MAX) - 1;
 }
 
-float smrand_uniform() {
+float smrand_uniformv() {
 	return smrand_uniform_do();
+}
+
+void smrand_uniform(int n, float *y) {
+	while (n--) {
+		y[n] = smrand_uniform_do();
+	}
 }
 
 atomic_uint_fast32_t gaussian_extra = ATOMIC_VAR_INIT(0x7FC00000);
 
-float smrand_gaussian() {
+float smrand_gaussianv() {
 	float s, u1, u2, a;
        	union {
 		int32_t i;
@@ -523,4 +440,21 @@ float smrand_gaussian() {
 	atomic_store_explicit(&gaussian_extra, b.i,
 			      memory_order_release);
 	return a;
+}
+
+void smrand_gaussian(int n, float *y) {
+	float u1, u2, s;
+	if (n % 2) {
+		y[--n] = smrand_gaussianv();
+	}
+	while(n--) {
+		do {
+			u1 = smrand_uniform_do();
+			u2 = smrand_uniform_do();
+			s = u1 * u1 + u2 * u2;
+		} while(s >= 1);
+		s = sqrtf(-2 * logf(s) / s);
+		y[n--] = s * u1;
+		y[n] = s * u2;
+	}
 }

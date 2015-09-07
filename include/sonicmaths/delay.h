@@ -23,14 +23,9 @@
 #ifndef SONICMATHS_DELAY_H
 #define SONICMATHS_DELAY_H 1
 
-#include <math.h>
-#include <sonicmaths/math.h>
-
-#define SMDELAY_WSINCN 21.0f
-
 struct smdelay {
-	size_t len;
-	size_t i;
+	int len;
+	int i;
 	float *x;
 };
 
@@ -42,36 +37,11 @@ void smdelay_destroy(struct smdelay *delay);
 /**
  * Initialize delay
  */
-int smdelay_init(struct smdelay *delay, size_t len);
+int smdelay_init(struct smdelay *delay, int len);
 
-#include <m_pd.h>
+void smtapdelay(struct smdelay *delay, int n, int ntaps, float **y, float *x,
+		float **t);
 
-static inline float smdelay_calc(struct smdelay *delay, float t) {
-	float f, r;
-	size_t i;
-	size_t len;
-
-	/* setup */
-	i = delay->i;
-	len = delay->len;
-
-	/* linear interpolation */
-	f = t;
-	t = ceilf(t);
-	f = t - f;
-	i = ((i + len) - (size_t) t) % len;
-	r = delay->x[i++];
-	return r + f * (delay->x[i % len] - r);
-}
-
-static inline float smdelay(struct smdelay *delay, float x, float t) {
-	size_t i;
-	float y;
-	i = delay->i;
-	delay->x[i] = x;
-	y = smdelay_calc(delay, t);
-       	delay->i = (i + 1) % delay->len;
-	return y;
-}
+void smdelay(struct smdelay *delay, int n, float *y, float *x, float *t);
 
 #endif

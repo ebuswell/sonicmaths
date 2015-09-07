@@ -23,9 +23,14 @@
 #ifndef SONICMATHS_SAMPLE_AND_HOLD_H
 #define SONICMATHS_SAMPLE_AND_HOLD_H 1
 
+enum smsandh_ctl {
+	SMSANDH_OFF,
+	SMSANDH_ON
+};
+
 struct smsandh {
-	float x1;
-	float t;
+	float x;
+	enum smsandh_ctl ctl;
 };
 
 /**
@@ -38,16 +43,6 @@ void smsandh_destroy(struct smsandh *sandh);
  */
 int smsandh_init(struct smsandh *sandh);
 
-static inline float smsandh(struct smsandh *sandh, float x, float t) {
-	if (t == 0.0f) {
-		return x;
-	}
-	while (sandh->t > t) {
-		sandh->t -= t;
-		sandh->x1 = x;
-	}
-	sandh->t += 1.0f;
-	return sandh->x1;
-}
+void smsandh(struct smsandh *sandh, int n, float *y, float *x, float *ctl);
 
 #endif

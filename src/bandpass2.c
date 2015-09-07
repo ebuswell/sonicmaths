@@ -1,15 +1,7 @@
-/** @file random.h
- *
- * Random numbers
- *
- */
 /*
+ * second-order.c
+ * 
  * Copyright 2015 Evan Buswell
- *
- * Copied with minimal changes from
- * https://github.com/divfor/mt_rand/blob/master/mtrand.h
- *
- * Copyright 2007-2009 The OpenTyrian Development Team
  * 
  * This file is part of Sonic Maths.
  * 
@@ -25,18 +17,29 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_RANDOM_H
-#define SONICMATHS_RANDOM_H 1
+#include "sonicmaths/math.h"
+#include "sonicmaths/second-order.h"
+#include "sonicmaths/bandpass2.h"
 
-#include <stdint.h>
-
-#define SMRAND_MAX 0xffffffffUL
-
-void smrand_seed(uint32_t s);
-uint32_t smrandv(void);
-float smrand_uniformv(void);
-void smrand_uniform(int n, float *y);
-float smrand_gaussianv(void);
-void smrand_gaussian(int n, float *y);
-
-#endif /* SONICMATHS_RANDOM_H */
+void smbandpass2(struct sm2order *filter,
+		 int n, float *y, float *x, float *f, float *Q) {
+	int i;
+	float _y, y1, y2, _x, x1, x2;
+	x1 = filter->x1;
+	x2 = filter->x2;
+	y1 = filter->y1;
+	y2 = filter->y2;
+	for (i = 0; i < n; i++) {
+		_x = x[i];
+		_y = smbandpass2v(y1, y2, _x, x1, x2, f[i], Q[i]);
+		y2 = y1;
+		y1 = _y;
+		x2 = x1;
+		x1 = _x;
+		y[i] = _y;
+	}
+	filter->y1 = SMFPNORM(y1);
+	filter->y2 = SMFPNORM(y2);
+	filter->x1 = x1;
+	filter->x2 = x2;
+}

@@ -1,15 +1,7 @@
-/** @file random.h
- *
- * Random numbers
- *
- */
 /*
+ * quantize.c
+ * 
  * Copyright 2015 Evan Buswell
- *
- * Copied with minimal changes from
- * https://github.com/divfor/mt_rand/blob/master/mtrand.h
- *
- * Copyright 2007-2009 The OpenTyrian Development Team
  * 
  * This file is part of Sonic Maths.
  * 
@@ -25,18 +17,13 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SONICMATHS_RANDOM_H
-#define SONICMATHS_RANDOM_H 1
+#include <math.h>
+#include "sonicmaths/quantize.h"
 
-#include <stdint.h>
-
-#define SMRAND_MAX 0xffffffffUL
-
-void smrand_seed(uint32_t s);
-uint32_t smrandv(void);
-float smrand_uniformv(void);
-void smrand_uniform(int n, float *y);
-float smrand_gaussianv(void);
-void smrand_gaussian(int n, float *y);
-
-#endif /* SONICMATHS_RANDOM_H */
+void smquant(int n, float *y, float *x, float *res) {
+	float _res;
+	while (n--) {
+		_res = res[n];
+		y[n] = roundf(x[n] / _res) * _res;
+	}
+}

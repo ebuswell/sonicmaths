@@ -3,16 +3,20 @@ INCLUDEDIR?=${PREFIX}/include
 LIBDIR?=${PREFIX}/lib
 DESTDIR?=
 PKGCONFIGDIR?=${LIBDIR}/pkgconfig
+SHAREDSUFFIX?=.so
+STATICSUFFIX?=.a
+VERSIONPOS=suffix
 
-CC=gcc-4.9
-CFLAGS?=-O2
+CC=cc
+CFLAGS?=-fPIC -O3 -ffast-math -freciprocal-math -fno-trapping-math \
+	-mfpmath=sse,387 -mpc32
 LDFLAGS?=
 AR?=ar
 ARFLAGS?=rv
 
 CFLAGS+=-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
-        -Wdouble-promotion
+	-Wdouble-promotion
 CFLAGS+=-Iinclude
 
-LIBS=-lfftw3f -lm
-STATIC=-lfftw3f -lm
+LIBS=-lm
+STATIC=-lm
