@@ -20,6 +20,7 @@
  */
 
 #include <math.h>
+#include <stdlib.h>
 #include "sonicmaths/key.h"
 
 void smn2f(int n, float *f, float *note, float *root) {
@@ -114,3 +115,52 @@ void smkey(struct smkey *key, int n, float *f, float *note, float *root) {
 	}
 }
 
+static inline float smstr2nv_static(char *note) {
+	float n;
+	switch ((int) *note++) {
+	case (int) 'a':
+	case (int) 'A':
+		n = 0.0f/12.0f;
+		break;
+	case (int) 'b':
+	case (int) 'B':
+		n = 2.0f/12.0f;
+		break;
+	case (int) 'c':
+	case (int) 'C':
+		n = 3.0f/12.0f;
+		break;
+	case (int) 'd':
+	case (int) 'D':
+		n = 5.0f/12.0f;
+		break;
+	case (int) 'e':
+	case (int) 'E':
+		n = 7.0f/12.0f;
+		break;
+	case (int) 'f':
+	case (int) 'F':
+		n = 8.0f/12.0f;
+		break;
+	case (int) 'g':
+	case (int) 'G':
+		n = 10.0f/12.0f;
+		break;
+	}
+	if (*note == '#') {
+		note++;
+		n += 1.0f/12.0f;
+	} else if (*note == 'b') {
+		note++;
+		n -= 1.0f/12.0f;
+	}
+	if (*note == '\0') {
+		return ldexpf(n, 4);
+	} else {
+		return ldexpf(n, atoi(note));
+	}
+}
+
+float smstr2nv(char *note, char *root) {
+	return smstr2nv_static(note) - smstr2nv_static(root);
+}

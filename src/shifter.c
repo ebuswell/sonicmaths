@@ -21,8 +21,7 @@
 #include <math.h>
 #include "sonicmaths/math.h"
 #include "sonicmaths/oscillator.h"
-#include "sonicmaths/second-order.h"
-#include "sonicmaths/lowpass2.h"
+#include "sonicmaths/filter.h"
 #include "sonicmaths/shifter.h"
 
 /* See:
@@ -56,7 +55,7 @@ int smshift_init(struct smshift *shift) {
 		return r;
 	}
 	memset(&shift->coeff, 0, sizeof(struct smhilbert_pair));
-	r = sm2order_init(&shift->filter);
+	r = smf2o_init(&shift->filter);
 	if (r != 0) {
 		smosc_destroy(&shift->osc);
 		return r;
@@ -66,7 +65,7 @@ int smshift_init(struct smshift *shift) {
 
 void smshift_destroy(struct smshift *shift) {
 	smosc_destroy(&shift->osc);
-	sm2order_destroy(&shift->filter);
+	smf2o_destroy(&shift->filter);
 }
 
 void smshift(struct smshift *shift, int n, float *y, float *x, float *f) {
@@ -78,9 +77,9 @@ void smshift(struct smshift *shift, int n, float *y, float *x, float *f) {
 	for (i = 0; i < n; i++) {
 		lpf[i] = f[i] > 0 ? 0.9995f * (0.5f - f[i])
 				  : 0.9995f * 0.5f;
-		lpQ[i] = SM2O_BUTTERWORTH_Q;
+		lpQ[i] = SMF_BUTTERWORTH_Q;
 	}
-	smlowpass2(&shift->filter, n, x, x, lpf, lpQ);
+	smflp2(&shift->filter, n, x, x, lpf, lpQ);
 	t = shift->osc.t;
 	y1 = shift->coeff.y1;
 	for (i = 0; i < n; i++) {

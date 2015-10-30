@@ -23,28 +23,24 @@
 #ifndef SONICMATHS_H
 #define SONICMATHS_H 1
 
-#include <sonicmaths/bandpass2.h>
-#include <sonicmaths/bandstop2.h>
 #include <sonicmaths/clock.h>
 #include <sonicmaths/cosine.h>
 #include <sonicmaths/delay.h>
 #include <sonicmaths/differentiator.h>
 #include <sonicmaths/envelope-generator.h>
 #include <sonicmaths/fdmodulator.h>
-#include <soncimaths/highpass2.h>
+#include <sonicmaths/highpass2.h>
 #include <sonicmaths/impulse-train.h>
 #include <sonicmaths/integrator.h>
 #include <sonicmaths/key.h>
 #include <sonicmaths/lag.h>
 #include <sonicmaths/limit.h>
-#include <sonicmaths/lowpass2.h>
 #include <sonicmaths/math.h>
 #include <sonicmaths/oscillator.h>
 #include <sonicmaths/quantize.h>
 #include <sonicmaths/random.h>
 #include <sonicmaths/reverb.h>
 #include <sonicmaths/sample-and-hold.h>
-#include <sonicmaths/second-order.h>
 #include <sonicmaths/shifter.h>
 
 #endif /* ! SONICMATHS_H */

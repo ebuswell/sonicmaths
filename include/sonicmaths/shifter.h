@@ -26,7 +26,7 @@
 
 #include <sonicmaths/math.h>
 #include <sonicmaths/oscillator.h>
-#include <sonicmaths/second-order.h>
+#include <sonicmaths/filter.h>
 
 struct smhilbert_pair_sect {
 	float x1;
@@ -46,7 +46,7 @@ struct smhilbert_pair {
  */
 struct smshift {
 	struct smhilbert_pair coeff;
-	struct sm2order filter;
+	struct smf2o filter;
 	struct smosc osc;
 };
 

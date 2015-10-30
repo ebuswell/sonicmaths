@@ -10,24 +10,22 @@ include config.mk
 
 VERSION=0.3
 
-SRCS=src/bandpass2.c src/bandstop2.c src/clock.c src/cosine.c src/delay.c \
-     src/differentiator.c src/envelope-generator.c src/fdmodulator.c \
-     src/highpass2.c src/impulse-train.c src/integrator.c src/key.c \
-     src/lag.c src/limit.c src/lowpass2.c src/oscillator.c src/quantize.c \
-     src/random.c src/reverb.c src/sample-and-hold.c src/second-order.c \
-     src/shifter.c
+SRCS=src/clock.c src/cosine.c src/delay.c src/differentiator.c \
+     src/envelope-generator.c src/filter.c src/fdmodulator.c \
+     src/impulse-train.c src/integrator.c src/key.c src/lag.c src/limit.c \
+     src/oscillator.c src/quantize.c src/random.c src/reverb.c \
+     src/sample-and-hold.c src/shifter.c
 
 TESTSRCS=
 
-HEADERS=sonicmaths/bandpass2.h sonicmaths/bandstop2.h sonicmaths/clock.h \
-	sonicmaths/cosine.h sonicmaths/delay.h sonicmaths/differentiator.h \
-	sonicmaths/envelope-generator.h sonicmaths/fdmodulator.h \
-	sonicmaths/highpass2.h sonicmaths/impulse-train.h \
-	sonicmaths/integrator.h sonicmaths/key.h sonicmaths/lag.h \
-	sonicmaths/limit.h sonicmaths/lowpass2.h sonicmaths/math.h \
+HEADERS=sonicmaths/clock.h sonicmaths/cosine.h sonicmaths/delay.h \
+	sonicmaths/differentiator.h sonicmaths/envelope-generator.h \
+	sonicmaths/fdmodulator.h sonicmaths/filter.h \
+	sonicmaths/impulse-train.h sonicmaths/integrator.h sonicmaths/key.h \
+	sonicmaths/lag.h sonicmaths/limit.h sonicmaths/math.h \
 	sonicmaths/oscillator.h sonicmaths/quantize.h sonicmaths/random.h \
 	sonicmaths/reverb.h sonicmaths/sample-and-hold.h \
-	sonicmaths/second-order.h sonicmaths/shifter.h sonicmaths.h
+	sonicmaths/shifter.h sonicmaths.h
 
 OBJS=${SRCS:.c=.o}
 TESTOBJS=${TESTSRCS:.c=.o}

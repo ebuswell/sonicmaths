@@ -41,4 +41,8 @@ static inline float smnormfv(float sample_rate, float f) {
 	 : x > 0.0f ? HUGE_VALF	\
 	 : -HUGE_VALF)
 
+static inline float smblprewarp(float w) {
+	return 2.0f * atan(w / 2.0f);
+}
+
 #endif /* ! SONICMATHS_MATH_H */

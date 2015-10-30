@@ -23,11 +23,11 @@
 #ifndef SONICMATHS_FDMODULATOR_H
 #define SONICMATHS_FDMODULATOR_H 1
 
-#include <sonicmaths/second-order.h>
+#include <sonicmaths/filter.h>
 
 struct smfdmod {
-	struct sm2order (*highf)[2][2];
-	struct sm2order (*lowf)[2][2];
+	struct smf2stage (*highf)[2][2];
+	struct smf2stage (*lowf)[2][2];
 	int maxnbanks;
 };
 

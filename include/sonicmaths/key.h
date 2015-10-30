@@ -219,4 +219,9 @@ extern struct smkey_western smkey_equal;
  */
 void smkey(struct smkey *key, int n, float *freq, float *note, float *root);
 
+/**
+ *  Parse a string like "c#4" to get a note number.
+ */
+float smstr2nv(char *note, char *root);
+
 #endif /* ! SONICMATHS_KEY_H */

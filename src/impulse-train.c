@@ -22,37 +22,25 @@
 #include "sonicmaths/oscillator.h"
 #include "sonicmaths/impulse-train.h"
 
-#define A 16.080840619878092f
-
 void smitrain(struct smosc *osc, int n, float *y, float *f, float *phi) {
 	int i;
 	double t;
-	float _y, _f, f_2, wt_2, nh,
-	      sinw, cosw, sinnw, cosnw, sinn1w, cosn1w,
-	      sinhaf, coshaf, sinhnaf, coshnaf;
+	float _y, _f, wt_2, nh, ha,
+	      sinw_2, sinnw_2, cosn1w_2, cosn1w;
 	t = osc->t;
 	for (i = 0; i < n; i++) {
 		_f = f[i];
-		nh = floorf(1.0f / (2.0f * _f)); /* the number of harmonics */
-		f_2 = _f * 0.5f;
-		wt_2 = ((float) M_PI) * (((float) t) + phi[i]);
-		sinw = sinf(wt_2);
-		cosw = cosf(wt_2);
-		sinnw = sinf(nh * wt_2);
-		cosnw = cosf(nh * wt_2);
-		sinn1w = sinf((nh + 1.0f) * wt_2);
-		cosn1w = cosf((nh + 1.0f) * wt_2);
-		sinhaf = sinh(A * f_2);
-		coshaf = cosh(A * f_2);
-		sinhnaf = sinh(nh * A * f_2);
-		coshnaf = cosh(nh * A * f_2);
-		_y = cosn1w * sinnw / sinw;
-		_y -= expf(A * ((nh + 1.0f) * f_2 - 0.5f))
-		      * (  cosn1w * (sinhnaf * sinhaf * cosnw * cosw
-				     + coshnaf * coshaf * sinnw * sinw)
-			 + sinn1w * (sinhnaf * coshaf * cosnw * sinw
-				     - coshnaf * sinhaf * sinnw * cosw))
-		      / (sinhaf * sinhaf + sinw * sinw);
+		ha = 1.0f / (2.0f * _f);
+		nh = floorf(ha); /* the number of harmonics */
+		ha -= nh; /* the strength of the top harmonic */
+		nh -= 1.0f;
+		wt_2 = ((float)  M_PI) * (((float) t) + phi[i]);
+		sinw_2 = sinf(wt_2);
+		sinnw_2 = sinf(nh * wt_2);
+		cosn1w_2 = cosf((nh + 1.0f) * wt_2);
+		cosn1w = 2.0f * cosn1w_2 * cosn1w_2 - 1.0f;
+		_y = cosn1w_2 * sinnw_2 / sinw_2;
+		_y += ha * cosn1w;
 		y[i] = _y;
 		t += (double) _f;
 		t -= floor(t);
