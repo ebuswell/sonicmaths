@@ -48,7 +48,7 @@ static float smfdmod_lr_lpv(struct smf2stage *filter, float w, float x) {
 	float y;
 	y = smf2l(x, filter[0].x1, filter[0].x2,
 		  filter[0].y1, filter[0].y2,
-		  w, SMF_BUTTERWORTH_P12);
+		  w, SMF_BWP21);
 	filter[0].y2 = filter[0].y1;
 	filter[0].y1 = y;
 	filter[0].x2 = filter[0].x1;
@@ -56,7 +56,7 @@ static float smfdmod_lr_lpv(struct smf2stage *filter, float w, float x) {
 	x = y;
 	y = smf2l(x, filter[1].x1, filter[1].x2,
 		  filter[1].y1, filter[1].y2,
-		  w, SMF_BUTTERWORTH_P12);
+		  w, SMF_BWP21);
 	filter[1].y2 = filter[1].y1;
 	filter[1].y1 = y;
 	filter[1].x2 = filter[1].x1;
@@ -68,7 +68,7 @@ static float smfdmod_lr_hpv(struct smf2stage *filter, float w, float x) {
 	float y;
 	y = smf2h(x, filter[0].x1, filter[0].x2,
 		  filter[0].y1, filter[0].y2,
-		  w, SMF_BUTTERWORTH_P12);
+		  w, SMF_BWP21);
 	filter[0].y2 = filter[0].y1;
 	filter[0].y1 = y;
 	filter[0].x2 = filter[0].x1;
@@ -76,7 +76,7 @@ static float smfdmod_lr_hpv(struct smf2stage *filter, float w, float x) {
 	x = y;
 	y = smf2h(x, filter[1].x1, filter[1].x2,
 		  filter[1].y1, filter[1].y2,
-		  w, SMF_BUTTERWORTH_P12);
+		  w, SMF_BWP21);
 	filter[1].y2 = filter[1].y1;
 	filter[1].y1 = y;
 	filter[1].x2 = filter[1].x1;

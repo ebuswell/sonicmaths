@@ -27,7 +27,7 @@
 #include <math.h>
 
 static inline float smff2fw(float f) {
-	return tanf((f > 0.49999f ? 0.49999f : f) * (float) M_PI);
+	return tanf((f > 0.499f ? 0.499f : f) * (float) M_PI);
 }
 
 static inline float smf1l(float x, float x1, float y1, float w) {
@@ -171,17 +171,18 @@ void smfbs6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q)
 void smfbp8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q);
 void smfbs8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q);
 
-#define SMF_BUTTERWORTH_P12 ((float) M_SQRT2)
-#define SMF_BUTTERWORTH_P12_INV ((float) M_SQRT1_2)
-#define SMF_BUTTERWORTH_P13 1.0f
-#define SMF_BUTTERWORTH_P13_INV 1.0f
-#define SMF_BUTTERWORTH_P14 0.7653668647301796f
-#define SMF_BUTTERWORTH_P14_INV 1.306562964876377f
-#define SMF_BUTTERWORTH_P24 1.847759065022574f
-#define SMF_BUTTERWORTH_P24_INV 0.541196100146197f
-#define SMF_BUTTERWORTH_P48 1.961570560806461f
-#define SMF_BUTTERWORTH_P48_INV 0.5097955791041592f
+#define SMF_BWP21	 1.414213562373095f
+#define SMF_BWP31	1.0f
+#define SMF_BWP41	0.7653668647301796f
+#define SMF_BWP42	 1.847759065022574f
+#define SMF_BWP61	0.5176380902050414f
+#define SMF_BWP62	 1.414213562373095f
+#define SMF_BWP63	 1.931851652578136f
+#define SMF_BWP81	0.3901806440322565f
+#define SMF_BWP82	 1.111140466039204f
+#define SMF_BWP83	 1.662939224605090f
+#define SMF_BWP84	 1.961570560806461f
 
-#define SMF_BUTTERWORTH_Q ((float) M_SQRT1_2)
+#define SMF_BWQ		0.7071067811865475f
 
 #endif /* ! SONICMATHS_FILTER_H */

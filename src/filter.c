@@ -115,7 +115,8 @@ void smflp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q)
 	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
 		_x = x[i];
-		_y = smf2l(_x, x1, x2, y1, y2, smff2fw(f[i]), 1.0f/Q[i]);
+		_y = smf2l(_x, x1, x2, y1, y2, smff2fw(f[i]),
+			   SMF_BWP21 * SMF_BWQ / Q[i]);
 		y2 = y1;
 		y1 = _y;
 		x2 = x1;
@@ -137,7 +138,8 @@ void smfhp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q)
 	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
 		_x = x[i];
-		_y = smf2h(_x, x1, x2, y1, y2, smff2fw(f[i]), 1.0f/Q[i]);
+		_y = smf2h(_x, x1, x2, y1, y2, smff2fw(f[i]),
+			   SMF_BWP21 * SMF_BWQ / Q[i]);
 		y2 = y1;
 		y1 = _y;
 		x2 = x1;
@@ -159,7 +161,8 @@ void smfbp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q)
 	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
 		_x = x[i];
-		_y = smf2p(_x, x1, x2, y1, y2, smff2fw(f[i]), 1.0f/Q[i]);
+		_y = smf2p(_x, x1, x2, y1, y2, smff2fw(f[i]),
+			   SMF_BWP21 * SMF_BWQ / Q[i]);
 		y2 = y1;
 		y1 = _y;
 		x2 = x1;
@@ -181,7 +184,8 @@ void smfbs2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q)
 	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
 		_x = x[i];
-		_y = smf2s(_x, x1, x2, y1, y2, smff2fw(f[i]), 1.0f/Q[i]);
+		_y = smf2s(_x, x1, x2, y1, y2, smff2fw(f[i]),
+			   SMF_BWP21 * SMF_BWQ / Q[i]);
 		y2 = y1;
 		y1 = _y;
 		x2 = x1;
@@ -210,7 +214,8 @@ void smflp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q)
 		s1y1 = _y;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P12_INV / Q[i]);
+		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP31 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -241,7 +246,8 @@ void smfhp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q)
 		s1y1 = _y;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P12_INV / Q[i]);
+		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP31 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -270,13 +276,14 @@ void smflp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2l(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2l(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24_INV / Q[i]);
+		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP41 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -307,13 +314,14 @@ void smfhp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2h(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2h(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24_INV / Q[i]);
+		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP42 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -344,13 +352,14 @@ void smfbp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P12);
+		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P12_INV / Q[i]);
+		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP41 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -381,13 +390,14 @@ void smfbs4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P12);
+		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P12_INV / Q[i]);
+		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w,
+			   SMF_BWP41 * SMF_BWQ / Q[i]);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
@@ -423,19 +433,20 @@ void smfbp6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, 1.0f);
+		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP63);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP62);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
 		s2x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BUTTERWORTH_P24_INV / Q[i]);
+		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w,
+			   SMF_BWP61 * SMF_BWQ / Q[i]);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;
@@ -475,19 +486,20 @@ void smfbs6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, 1.0f);
+		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP63);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP62);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
 		s2x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BUTTERWORTH_P24_INV / Q[i]);
+		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w,
+			   SMF_BWP61 * SMF_BWQ / Q[i]);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;
@@ -531,25 +543,26 @@ void smfbp8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP84);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24_INV);
+		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP83);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
 		s2x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BUTTERWORTH_P48);
+		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BWP82);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;
 		s3x1 = _x;
 		_x = _y;
-		_y = smf2p(_x, s4x1, s4x2, s4y1, s4y2, w, SMF_BUTTERWORTH_P48_INV / Q[i]);
+		_y = smf2p(_x, s4x1, s4x2, s4y1, s4y2, w,
+			   SMF_BWP81 * SMF_BWQ / Q[i]);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;
@@ -597,25 +610,26 @@ void smfbs8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q)
 	for (i = 0; i < n; i++) {
 		_x = x[i];
 		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BUTTERWORTH_P24);
+		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP84);
 		s1y2 = s1y1;
 		s1y1 = _y;
 		s1x2 = s1x1;
 		s1x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BUTTERWORTH_P24_INV);
+		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP83);
 		s2y2 = s2y1;
 		s2y1 = _y;
 		s2x2 = s2x1;
 		s2x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BUTTERWORTH_P48);
+		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BWP82);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;
 		s3x1 = _x;
 		_x = _y;
-		_y = smf2s(_x, s4x1, s4x2, s4y1, s4y2, w, SMF_BUTTERWORTH_P48_INV / Q[i]);
+		_y = smf2s(_x, s4x1, s4x2, s4y1, s4y2, w,
+			   SMF_BWP81 * SMF_BWQ / Q[i]);
 		s3y2 = s3y1;
 		s3y1 = _y;
 		s3x2 = s3x1;

@@ -77,7 +77,7 @@ void smshift(struct smshift *shift, int n, float *y, float *x, float *f) {
 	for (i = 0; i < n; i++) {
 		lpf[i] = f[i] > 0 ? 0.9995f * (0.5f - f[i])
 				  : 0.9995f * 0.5f;
-		lpQ[i] = SMF_BUTTERWORTH_Q;
+		lpQ[i] = SMF_BWQ;
 	}
 	smflp2(&shift->filter, n, x, x, lpf, lpQ);
 	t = shift->osc.t;
