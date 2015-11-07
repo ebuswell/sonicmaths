@@ -17,640 +17,223 @@
  * You should have received a copy of the GNU General Public License along
  * with Sonic Maths.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <string.h>
+#include <math.h>
 #include "sonicmaths/filter.h"
 
-int smf1o_init(struct smf1o *filter) {
-	memset(filter, 0, sizeof(struct smf1o));
-	return 0;
-}
-
-void smf1o_destroy(struct smf1o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-int smf2o_init(struct smf2o *filter) {
-	memset(filter, 0, sizeof(struct smf2o));
-	return 0;
-}
-
-void smf2o_destroy(struct smf2o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-int smf3o_init(struct smf3o *filter) {
-	memset(filter, 0, sizeof(struct smf3o));
-	return 0;
-}
-
-void smf3o_destroy(struct smf3o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-int smf4o_init(struct smf4o *filter) {
-	memset(filter, 0, sizeof(struct smf4o));
-	return 0;
-}
-
-void smf4o_destroy(struct smf4o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-int smf6o_init(struct smf6o *filter) {
-	memset(filter, 0, sizeof(struct smf6o));
-	return 0;
-}
-
-void smf6o_destroy(struct smf6o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-int smf8o_init(struct smf8o *filter) {
-	memset(filter, 0, sizeof(struct smf8o));
-	return 0;
-}
-
-void smf8o_destroy(struct smf8o *filter __attribute__((unused))) {
-	/* Do nothing */
-}
-
-void smflp1(struct smf1o *filter, int n, float *y, float *x, float *f) {
+void smf1low(float *u, int n, float *y, float *x, float *f) {
 	int i;
-	float _y, y1, _x, x1;
-	x1 = filter->s.x1;
-	y1 = filter->s.y1;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf1l(_x, x1, y1, smff2fw(f[i]));
-		y1 = _y;
-		x1 = _x;
-		y[i] = _y;
+		y[i] = smf1lowv(u, x[i], smff2w_2(f[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.y1 = y1;
 }
 
-void smfhp1(struct smf1o *filter, int n, float *y, float *x, float *f) {
+void smf1high(float *u, int n, float *y, float *x, float *f) {
 	int i;
-	float _y, y1, _x, x1;
-	x1 = filter->s.x1;
-	y1 = filter->s.y1;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf1h(_x, x1, y1, smff2fw(f[i]));
-		y1 = _y;
-		x1 = _x;
-		y[i] = _y;
+		y[i] = smf1highv(u, x[i], smff2w_2(f[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.y1 = y1;
 }
 
-void smflp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf2low(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, y1, y2, _x, x1, x2;
-	x1 = filter->s.x1;
-	x2 = filter->s.x2;
-	y1 = filter->s.y1;
-	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf2l(_x, x1, x2, y1, y2, smff2fw(f[i]),
-			   SMF_BWP21 * SMF_BWQ / Q[i]);
-		y2 = y1;
-		y1 = _y;
-		x2 = x1;
-		x1 = _x;
-		y[i] = _y;
+		y[i] = smf2lowv(u, x[i], smff2w_2(f[i]),
+				SMF_BWP21 * (1 - r[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.x2 = x2;
-	filter->s.y1 = y1;
-	filter->s.y2 = y2;
 }
 
-void smfhp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf2high(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, y1, y2, _x, x1, x2;
-	x1 = filter->s.x1;
-	x2 = filter->s.x2;
-	y1 = filter->s.y1;
-	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf2h(_x, x1, x2, y1, y2, smff2fw(f[i]),
-			   SMF_BWP21 * SMF_BWQ / Q[i]);
-		y2 = y1;
-		y1 = _y;
-		x2 = x1;
-		x1 = _x;
-		y[i] = _y;
+		y[i] = smf2highv(u, x[i], smff2w_2(f[i]),
+				 SMF_BWP21 * (1 - r[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.x2 = x2;
-	filter->s.y1 = y1;
-	filter->s.y2 = y2;
 }
 
-void smfbp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf2band(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, y1, y2, _x, x1, x2;
-	x1 = filter->s.x1;
-	x2 = filter->s.x2;
-	y1 = filter->s.y1;
-	y2 = filter->s.y2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf2p(_x, x1, x2, y1, y2, smff2fw(f[i]),
-			   SMF_BWP21 * SMF_BWQ / Q[i]);
-		y2 = y1;
-		y1 = _y;
-		x2 = x1;
-		x1 = _x;
-		y[i] = _y;
+		y[i] = smf2bandv(u, x[i], smff2w_2(f[i]),
+				 SMF_BWP21 * (1 - r[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.x2 = x2;
-	filter->s.y1 = y1;
-	filter->s.y2 = y2;
 }
 
-void smfbs2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf3low(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, y1, y2, _x, x1, x2;
-	x1 = filter->s.x1;
-	x2 = filter->s.x2;
-	y1 = filter->s.y1;
-	y2 = filter->s.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		_y = smf2s(_x, x1, x2, y1, y2, smff2fw(f[i]),
-			   SMF_BWP21 * SMF_BWQ / Q[i]);
-		y2 = y1;
-		y1 = _y;
-		x2 = x1;
-		x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf1lowv(u, x[i], w_2);
+		y[i] = smf2lowv(u+1, t, w_2,
+				SMF_BWP31 * (1 - r[i]));
 	}
-	filter->s.x1 = x1;
-	filter->s.x2 = x2;
-	filter->s.y1 = y1;
-	filter->s.y2 = y2;
 }
 
-void smflp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf3high(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s2y1, s2y2, _x, s1x1, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf1l(_x, s1x1, s1y1, w);
-		s1y1 = _y;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP31 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf1highv(u, x[i], w_2);
+		y[i] = smf2highv(u+1, t, w_2,
+				 SMF_BWP31 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smfhp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q) {
+
+void smf4low(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s2y1, s2y2, _x, s1x1, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf1h(_x, s1x1, s1y1, w);
-		s1y1 = _y;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP31 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf2lowv(u, x[i], w_2, SMF_BWP42);
+		y[i] = smf2lowv(u+2, t, w_2,
+				SMF_BWP41 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smflp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf4high(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, _x, s1x1, s1x2, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2l(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2l(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP41 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf2highv(u, x[i], w_2, SMF_BWP42);
+		y[i] = smf2highv(u+2, t, w_2,
+				 SMF_BWP41 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smfhp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf4band(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, _x, s1x1, s1x2, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2h(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2h(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP42 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf2bandv(u, x[i], w_2, SMF_BWP42);
+		y[i] = smf2bandv(u+2, t, w_2,
+				 SMF_BWP41 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smfbp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf6band(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, _x, s1x1, s1x2, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP41 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf2bandv(u, x[i], w_2, SMF_BWP63);
+		t = smf2bandv(u+2, t, w_2, SMF_BWP62);
+		y[i] = smf2bandv(u+4, t, w_2,
+				 SMF_BWP61 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smfbs4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf8band(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, _x, s1x1, s1x2, s2x1, s2x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
+	float t, w_2;
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP42);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w,
-			   SMF_BWP41 * SMF_BWQ / Q[i]);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		t = smf2bandv(u, x[i], w_2, SMF_BWP84);
+		t = smf2bandv(u+2, t, w_2, SMF_BWP83);
+		t = smf2bandv(u+4, t, w_2, SMF_BWP82);
+		y[i] = smf2bandv(u+6, t, w_2,
+				 SMF_BWP81 * (1 - r[i]));
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
 }
 
-void smfbp6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf4split(float *u, int n, float **y, float *x, float *bw) {
+	int i, j;
+	float f, _bw, t;
+	for (i = 0; i < n; i++) {
+		_bw = bw[i];
+		t = x[i];
+		for (j = 0, f = _bw; f < 0.5f; f += _bw, j++) {
+			smf4linkwitz_rileyv(u+6*j, &y[j][i], &t, t,
+					    smff2w_2(f));
+		}
+		y[j][i] = t;
+	}
+}
+
+void smf3lowres(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, s3y1, s3y2,
-	      _x, s1x1, s1x2, s2x1, s2x2, s3x1, s3x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s3x1 = filter->s3.x1;
-	s3x2 = filter->s3.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
-	s3y1 = filter->s3.y1;
-	s3y2 = filter->s3.y2;
+	float t1, t2, t3, t4, t5, t6, u1, u2, u3, w_2, _r;
+	u1 = u[0];
+	u2 = u[1];
+	u3 = u[2];
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP63);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP62);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w,
-			   SMF_BWP61 * SMF_BWQ / Q[i]);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		_r = 3.0f * r[i];
+		t1 = ((1.0f + w_2) * (1.0f + SMF_BWP31 * w_2 + w_2 * w_2) * x[i]
+		      - (w_2 * w_2 * u1 + (1.0f + w_2) * w_2 * u2
+			 + (1.0f + w_2) * (1.0f + SMF_BWP31 * w_2) * u3) * _r)
+		 / /*-----------------------------------------------------------*/
+		     ((1.0f + w_2) * (1.0f + SMF_BWP31 * w_2 + w_2 * w_2)
+		      + w_2 * w_2 * w_2 * _r);
+		t2 = (t1 - u1) / (1.0f + w_2);
+		t3 = u1 + w_2 * t2;
+		t4 = (t3 - (w_2 + SMF_BWP31) * u2 - u3)
+		 / /*------------------------------------*/
+		     (1.0f + SMF_BWP31 * w_2 + w_2 * w_2);
+		t5 = u2 + w_2 * t4;
+		t6 = u3 + w_2 * t5;
+		u1 = w_2 * t2 + t3;
+		u2 = w_2 * t4 + t5;
+		u3 = w_2 * t5 + t6;
+		u1 = SMFPNORM(u1);
+		u2 = SMFPNORM(u2);
+		u3 = SMFPNORM(u3);
+		y[i] = t6;
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s3.x1 = s3x1;
-	filter->s3.x2 = s3x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
-	filter->s3.y1 = s3y1;
-	filter->s3.y2 = s3y2;
+	u[0] = u1;
+	u[1] = u2;
+	u[2] = u3;
 }
 
-void smfbs6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q) {
+void smf4lowres(float *u, int n, float *y, float *x, float *f, float *r) {
 	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, s3y1, s3y2,
-	      _x, s1x1, s1x2, s2x1, s2x2, s3x1, s3x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s3x1 = filter->s3.x1;
-	s3x2 = filter->s3.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
-	s3y1 = filter->s3.y1;
-	s3y2 = filter->s3.y2;
+	float t1, t2, t3, t4, t5, t6, t7, u1, u2, u3, u4, w_2, _r;
+	u1 = u[0];
+	u2 = u[1];
+	u3 = u[2];
+	u4 = u[3];
 	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP63);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP62);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w,
-			   SMF_BWP61 * SMF_BWQ / Q[i]);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		y[i] = _y;
+		w_2 = smff2w_2(f[i]);
+		_r = ((float) M_SQRT2) * r[i];
+		t1 = ((1 + SMF_BWP42 * w_2 + w_2 * w_2)
+		       * (1 + SMF_BWP41 * w_2 + w_2 * w_2)
+		       * x[i]
+		      - (w_2 * w_2 * u1
+			 + (1.0f + SMF_BWP42 * w_2) * w_2 * w_2 * u2
+			 + (1.0f + SMF_BWP42 * w_2 + w_2 * w_2) * w_2 * u3
+			 + (1.0f + SMF_BWP41 * w_2)
+			   * (1.0f + SMF_BWP42 * w_2 + w_2 * w_2)
+			   * u4)
+		        * _r)
+		  / /*----------------------------------------------------------*/
+		      ((1.0f + SMF_BWP42 * w_2 + w_2 * w_2)
+			* (1.0f + SMF_BWP41 * w_2 + w_2 * w_2)
+		       + w_2 * w_2 * w_2 * w_2 * _r);
+		t2 = (t1 - (w_2 + SMF_BWP42) * u1 - u2)
+		 / /*----------------------------*/
+		     (1.0f + SMF_BWP42 * w_2 + w_2 * w_2);
+		t3 = u1 + t2 * w_2;
+		t4 = u2 + t3 * w_2;
+		t5 = (t4 - (w_2 + SMF_BWP41) * u3 - u4)
+		 / /*----------------------------*/
+		     (1.0f + SMF_BWP41 * w_2 + w_2 * w_2);
+		t6 = u3 + w_2 * t5;
+		t7 = u4 + w_2 * t6;
+		u1 = w_2 * t2 + t3;
+		u2 = w_2 * t3 + t4;
+		u3 = w_2 * t5 + t6;
+		u4 = w_2 * t6 + t7;
+		u1 = SMFPNORM(u1);
+		u2 = SMFPNORM(u2);
+		u3 = SMFPNORM(u3);
+		u4 = SMFPNORM(u4);
+		y[i] = t7;
 	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s3.x1 = s3x1;
-	filter->s3.x2 = s3x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
-	filter->s3.y1 = s3y1;
-	filter->s3.y2 = s3y2;
+	u[0] = u1;
+	u[1] = u2;
+	u[2] = u3;
+	u[3] = u4;
 }
-
-void smfbp8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q) {
-	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, s3y1, s3y2, s4y1, s4y2,
-	      _x, s1x1, s1x2, s2x1, s2x2, s3x1, s3x2, s4x1, s4x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s3x1 = filter->s3.x1;
-	s3x2 = filter->s3.x2;
-	s4x1 = filter->s4.x1;
-	s4x2 = filter->s4.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
-	s3y1 = filter->s3.y1;
-	s3y2 = filter->s3.y2;
-	s4y1 = filter->s4.y1;
-	s4y2 = filter->s4.y2;
-	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2p(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP84);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP83);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BWP82);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		_x = _y;
-		_y = smf2p(_x, s4x1, s4x2, s4y1, s4y2, w,
-			   SMF_BWP81 * SMF_BWQ / Q[i]);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		y[i] = _y;
-	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s3.x1 = s3x1;
-	filter->s3.x2 = s3x2;
-	filter->s4.x1 = s4x1;
-	filter->s4.x2 = s4x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
-	filter->s3.y1 = s3y1;
-	filter->s3.y2 = s3y2;
-	filter->s4.y1 = s4y1;
-	filter->s4.y2 = s4y2;
-}
-
-void smfbs8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q) {
-	int i;
-	float _y, s1y1, s1y2, s2y1, s2y2, s3y1, s3y2, s4y1, s4y2,
-	      _x, s1x1, s1x2, s2x1, s2x2, s3x1, s3x2, s4x1, s4x2, w;
-	s1x1 = filter->s1.x1;
-	s1x2 = filter->s1.x2;
-	s2x1 = filter->s2.x1;
-	s2x2 = filter->s2.x2;
-	s3x1 = filter->s3.x1;
-	s3x2 = filter->s3.x2;
-	s4x1 = filter->s4.x1;
-	s4x2 = filter->s4.x2;
-	s1y1 = filter->s1.y1;
-	s1y2 = filter->s1.y2;
-	s2y1 = filter->s2.y1;
-	s2y2 = filter->s2.y2;
-	s3y1 = filter->s3.y1;
-	s3y2 = filter->s3.y2;
-	s4y1 = filter->s4.y1;
-	s4y2 = filter->s4.y2;
-	for (i = 0; i < n; i++) {
-		_x = x[i];
-		w = smff2fw(f[i]);
-		_y = smf2s(_x, s1x1, s1x2, s1y1, s1y2, w, SMF_BWP84);
-		s1y2 = s1y1;
-		s1y1 = _y;
-		s1x2 = s1x1;
-		s1x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s2x1, s2x2, s2y1, s2y2, w, SMF_BWP83);
-		s2y2 = s2y1;
-		s2y1 = _y;
-		s2x2 = s2x1;
-		s2x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s3x1, s3x2, s3y1, s3y2, w, SMF_BWP82);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		_x = _y;
-		_y = smf2s(_x, s4x1, s4x2, s4y1, s4y2, w,
-			   SMF_BWP81 * SMF_BWQ / Q[i]);
-		s3y2 = s3y1;
-		s3y1 = _y;
-		s3x2 = s3x1;
-		s3x1 = _x;
-		y[i] = _y;
-	}
-	filter->s1.x1 = s1x1;
-	filter->s1.x2 = s1x2;
-	filter->s2.x1 = s2x1;
-	filter->s2.x2 = s2x2;
-	filter->s3.x1 = s3x1;
-	filter->s3.x2 = s3x2;
-	filter->s4.x1 = s4x1;
-	filter->s4.x2 = s4x2;
-	filter->s1.y1 = s1y1;
-	filter->s1.y2 = s1y2;
-	filter->s2.y1 = s2y1;
-	filter->s2.y2 = s2y2;
-	filter->s3.y1 = s3y1;
-	filter->s3.y2 = s3y2;
-	filter->s4.y1 = s4y1;
-	filter->s4.y2 = s4y2;
-}
-

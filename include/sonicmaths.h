@@ -41,6 +41,5 @@
 #include <sonicmaths/random.h>
 #include <sonicmaths/reverb.h>
 #include <sonicmaths/sample-and-hold.h>
-#include <sonicmaths/shifter.h>
 
 #endif /* ! SONICMATHS_H */

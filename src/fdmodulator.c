@@ -23,129 +23,34 @@
 #include "sonicmaths/fdmodulator.h"
 
 int smfdmod_init(struct smfdmod *mod, int maxnbanks) {
-	mod->highf = calloc(maxnbanks - 1, sizeof(struct smf2stage) * 4);
-	if (mod->highf == NULL) {
+	mod->u = calloc(maxnbanks, sizeof(float) * 6 * 2);
+	if (mod->u == NULL) {
 		return -1;
 	}
-	mod->lowf = calloc(maxnbanks - 1, sizeof(struct smf2stage) * 4);
-	if (mod->lowf == NULL) {
-		free(mod->highf);
-		return -1;
-	}
-	/* adjust this so that we can use consistent indices for both
-	 * arrays */
-	mod->highf -= sizeof(struct smf2stage) * 4;
-	mod->maxnbanks = maxnbanks;
 	return 0;
 }
 
 void smfdmod_destroy(struct smfdmod *mod) {
-	free(mod->lowf);
-	free(mod->highf + sizeof(struct smf2stage) * 4);
-}
-
-static float smfdmod_lr_lpv(struct smf2stage *filter, float w, float x) {
-	float y;
-	y = smf2l(x, filter[0].x1, filter[0].x2,
-		  filter[0].y1, filter[0].y2,
-		  w, SMF_BWP21);
-	filter[0].y2 = filter[0].y1;
-	filter[0].y1 = y;
-	filter[0].x2 = filter[0].x1;
-	filter[0].x1 = x;
-	x = y;
-	y = smf2l(x, filter[1].x1, filter[1].x2,
-		  filter[1].y1, filter[1].y2,
-		  w, SMF_BWP21);
-	filter[1].y2 = filter[1].y1;
-	filter[1].y1 = y;
-	filter[1].x2 = filter[1].x1;
-	filter[1].x1 = y;
-	return y;
-}
-
-static float smfdmod_lr_hpv(struct smf2stage *filter, float w, float x) {
-	float y;
-	y = smf2h(x, filter[0].x1, filter[0].x2,
-		  filter[0].y1, filter[0].y2,
-		  w, SMF_BWP21);
-	filter[0].y2 = filter[0].y1;
-	filter[0].y1 = y;
-	filter[0].x2 = filter[0].x1;
-	filter[0].x1 = x;
-	x = y;
-	y = smf2h(x, filter[1].x1, filter[1].x2,
-		  filter[1].y1, filter[1].y2,
-		  w, SMF_BWP21);
-	filter[1].y2 = filter[1].y1;
-	filter[1].y1 = y;
-	filter[1].x2 = filter[1].x1;
-	filter[1].x1 = y;
-	return y;
+	free(mod->u);
 }
 
 void smfdmod(struct smfdmod *mod, int n, float *y, float *a, float *b,
-	     float *bankwidth) {
-	float bankf, bankdelta, bankw1, bankw2, _y, a0, b0;
+	     float *bw) {
 	int i, j;
+	float f, _bw, alow, blow, ahigh, bhigh, _y;
 	for (i = 0; i < n; i++) {
-		bankf = bankdelta = bankwidth[i];
-		a0 = a[i];
-		b0 = b[i];
-		bankw1 = smff2fw(bankf);
-		_y = smfdmod_lr_lpv(mod->lowf[0][0], bankw1, a0)
-		     * smfdmod_lr_lpv(mod->lowf[0][1], bankw1, b0);
-		for (j = 1;
-		     bankf + bankdelta < 0.5f;
-		     j++, bankf += bankdelta) {
-			bankw1 = smff2fw(bankf);
-			bankw2 = smff2fw(bankf + bankdelta);
-			_y += (smfdmod_lr_hpv(mod->lowf[j][0],
-					      bankw1,
-			       smfdmod_lr_lpv(mod->highf[j][0],
-					      bankw2, a0)))
-			      * (smfdmod_lr_hpv(mod->lowf[j][1],
-					        bankw1,
-			         smfdmod_lr_lpv(mod->highf[j][1],
-					        bankw2, b0)));
+		_y = 0;
+		_bw = bw[i];
+		ahigh = a[i];
+		bhigh = b[i];
+		for (j = 0, f = _bw; f < 0.5f; f += _bw, j++) {
+			smf4linkwitz_rileyv(mod->u+6*j, &alow, &ahigh, ahigh,
+					    smff2w_2(f));
+			smf4linkwitz_rileyv(mod->u+12*j, &blow, &bhigh, bhigh,
+					    smff2w_2(f));
+			_y += alow * blow;
 		}
-		bankw1 = smff2fw(bankf);
-		_y += smfdmod_lr_hpv(mod->highf[j][0], bankw1, a0)
-		      * smfdmod_lr_hpv(mod->highf[j][1], bankw1, b0);
+		_y += ahigh * bhigh;
 		y[i] = _y;
 	}
-	mod->lowf[0][0][0].y1 = SMFPNORM(mod->lowf[0][0][0].y1);
-	mod->lowf[0][0][0].y2 = SMFPNORM(mod->lowf[0][0][0].y2);
-	mod->lowf[0][0][1].y1 = SMFPNORM(mod->lowf[0][0][1].y1);
-	mod->lowf[0][0][1].y2 = SMFPNORM(mod->lowf[0][0][1].y2);
-	mod->lowf[0][1][0].y1 = SMFPNORM(mod->lowf[0][1][0].y1);
-	mod->lowf[0][1][0].y2 = SMFPNORM(mod->lowf[0][1][0].y2);
-	mod->lowf[0][1][1].y1 = SMFPNORM(mod->lowf[0][1][1].y1);
-	mod->lowf[0][1][1].y2 = SMFPNORM(mod->lowf[0][1][1].y2);
-	for (i = 1; i < mod->maxnbanks - 1; i++) {
-		mod->lowf[i][0][0].y1 = SMFPNORM(mod->lowf[i][0][0].y1);
-		mod->lowf[i][0][0].y2 = SMFPNORM(mod->lowf[i][0][0].y2);
-		mod->lowf[i][0][1].y1 = SMFPNORM(mod->lowf[i][0][1].y1);
-		mod->lowf[i][0][1].y2 = SMFPNORM(mod->lowf[i][0][1].y2);
-		mod->lowf[i][1][0].y1 = SMFPNORM(mod->lowf[i][1][0].y1);
-		mod->lowf[i][1][0].y2 = SMFPNORM(mod->lowf[i][1][0].y2);
-		mod->lowf[i][1][1].y1 = SMFPNORM(mod->lowf[i][1][1].y1);
-		mod->lowf[i][1][1].y2 = SMFPNORM(mod->lowf[i][1][1].y2);
-		mod->highf[i][0][0].y1 = SMFPNORM(mod->highf[i][0][0].y1);
-		mod->highf[i][0][0].y2 = SMFPNORM(mod->highf[i][0][0].y2);
-		mod->highf[i][0][1].y1 = SMFPNORM(mod->highf[i][0][1].y1);
-		mod->highf[i][0][1].y2 = SMFPNORM(mod->highf[i][0][1].y2);
-		mod->highf[i][1][0].y1 = SMFPNORM(mod->highf[i][1][0].y1);
-		mod->highf[i][1][0].y2 = SMFPNORM(mod->highf[i][1][0].y2);
-		mod->highf[i][1][1].y1 = SMFPNORM(mod->highf[i][1][1].y1);
-		mod->highf[i][1][1].y2 = SMFPNORM(mod->highf[i][1][1].y2);
-	}
-	mod->highf[i][0][0].y1 = SMFPNORM(mod->highf[i][0][0].y1);
-	mod->highf[i][0][0].y2 = SMFPNORM(mod->highf[i][0][0].y2);
-	mod->highf[i][0][1].y1 = SMFPNORM(mod->highf[i][0][1].y1);
-	mod->highf[i][0][1].y2 = SMFPNORM(mod->highf[i][0][1].y2);
-	mod->highf[i][1][0].y1 = SMFPNORM(mod->highf[i][1][0].y1);
-	mod->highf[i][1][0].y2 = SMFPNORM(mod->highf[i][1][0].y2);
-	mod->highf[i][1][1].y1 = SMFPNORM(mod->highf[i][1][1].y1);
-	mod->highf[i][1][1].y2 = SMFPNORM(mod->highf[i][1][1].y2);
 }

@@ -26,8 +26,7 @@
 #include <sonicmaths/filter.h>
 
 struct smfdmod {
-	struct smf2stage (*highf)[2][2];
-	struct smf2stage (*lowf)[2][2];
+	float *u;
 	int maxnbanks;
 };
 
@@ -35,6 +34,6 @@ int smfdmod_init(struct smfdmod *mod, int maxnbanks);
 void smfdmod_destroy(struct smfdmod *mod);
 
 void smfdmod(struct smfdmod *mod, int n, float *y, float *a, float *b,
-	     float *bankwidth);
+	     float *bw);
 
 #endif /* ! SONICMATHS_FDMODULATOR_H */

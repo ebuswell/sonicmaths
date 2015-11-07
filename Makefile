@@ -14,7 +14,7 @@ SRCS=src/clock.c src/cosine.c src/delay.c src/differentiator.c \
      src/envelope-generator.c src/filter.c src/fdmodulator.c \
      src/impulse-train.c src/integrator.c src/key.c src/lag.c src/limit.c \
      src/oscillator.c src/quantize.c src/random.c src/reverb.c \
-     src/sample-and-hold.c src/shifter.c
+     src/sample-and-hold.c
 
 TESTSRCS=
 
@@ -25,7 +25,7 @@ HEADERS=sonicmaths/clock.h sonicmaths/cosine.h sonicmaths/delay.h \
 	sonicmaths/lag.h sonicmaths/limit.h sonicmaths/math.h \
 	sonicmaths/oscillator.h sonicmaths/quantize.h sonicmaths/random.h \
 	sonicmaths/reverb.h sonicmaths/sample-and-hold.h \
-	sonicmaths/shifter.h sonicmaths.h
+	sonicmaths.h
 
 OBJS=${SRCS:.c=.o}
 TESTOBJS=${TESTSRCS:.c=.o}

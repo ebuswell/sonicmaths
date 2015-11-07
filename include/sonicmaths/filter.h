@@ -26,151 +26,6 @@
 #include <sonicmaths/math.h>
 #include <math.h>
 
-static inline float smff2fw(float f) {
-	return tanf((f > 0.499f ? 0.499f : f) * (float) M_PI);
-}
-
-static inline float smf1l(float x, float x1, float y1, float w) {
-	float y;
-	y = (w * (x + x1) - (w - 1.0f) * y1) / (w + 1.0f);
-	return SMFPNORM(y);
-}
-
-static inline float smf1h(float x, float x1, float y1, float w) {
-	float y;
-	y = ((x - x1) - (w - 1.0f) * y1) / (w + 1.0f);
-	return SMFPNORM(y);
-}
-
-static inline float smf2l(float x, float x1, float x2,
-			  float y1, float y2, float w, float a) {
-	float y;
-	float w2;
-	float aw;
-	w2 = w * w;
-	aw = a * w;
-	y = (w2 * (x + 2.0f * x1 + x2)
-	     - 2.0f * (w2 - 1.0f) * y1
-	     - (w2 - aw + 1.0f) * y2)
-	    / (1 + aw + w2);
-	return SMFPNORM(y);
-}
-
-static inline float smf2h(float x, float x1, float x2,
-			  float y1, float y2, float w, float a) {
-	float y;
-	float w2;
-	float aw;
-	w2 = w * w;
-	aw = a * w;
-	y = ((x - 2.0f * x1 + x2)
-	     - 2.0f * (w2 - 1.0f) * y1
-	     - (w2 - aw + 1.0f) * y2)
-	    / (1 + aw + w2);
-	return SMFPNORM(y);
-}
-
-static inline float smf2p(float x, float x1 __attribute__((unused)), float x2,
-			  float y1, float y2, float w, float a) {
-	float y;
-	float w2;
-	float aw;
-	w2 = w * w;
-	aw = a * w;
-	y = (w * (x - x2)
-	     - 2.0f * (w2 - 1.0f) * y1
-	     - (w2 - aw + 1.0f) * y2)
-	    / (1 + aw + w2);
-	return SMFPNORM(y);
-}
-
-static inline float smf2s(float x, float x1, float x2,
-			  float y1, float y2, float w, float a) {
-	float y;
-	float w2;
-	float aw;
-	w2 = w * w;
-	aw = a * w;
-	y = ((w2 + 1.0f) * (x + x2)
-	     + (w2 - 1.0f) * (x1 - y1)
-	     - (w2 - aw + 1.0f) * y2)
-	    / (1 + aw + w2);
-	return SMFPNORM(y);
-}
-
-struct smf1stage {
-	float x1;
-	float y1;
-};
-
-struct smf2stage {
-	float x1;
-	float x2;
-	float y1;
-	float y2;
-};
-
-struct smf1o {
-	struct smf1stage s;
-};
-
-struct smf2o {
-	struct smf2stage s;
-};
-
-struct smf3o {
-	struct smf1stage s1;
-	struct smf2stage s2;
-};
-
-struct smf4o {
-	struct smf2stage s1;
-	struct smf2stage s2;
-};
-
-struct smf6o {
-	struct smf2stage s1;
-	struct smf2stage s2;
-	struct smf2stage s3;
-};
-
-struct smf8o {
-	struct smf2stage s1;
-	struct smf2stage s2;
-	struct smf2stage s3;
-	struct smf2stage s4;
-};
-
-int smf1o_init(struct smf1o *filter);
-void smf1o_destroy(struct smf1o *filter);
-int smf2o_init(struct smf2o *filter);
-void smf2o_destroy(struct smf2o *filter);
-int smf3o_init(struct smf3o *filter);
-void smf3o_destroy(struct smf3o *filter);
-int smf4o_init(struct smf4o *filter);
-void smf4o_destroy(struct smf4o *filter);
-int smf6o_init(struct smf6o *filter);
-void smf6o_destroy(struct smf6o *filter);
-int smf8o_init(struct smf8o *filter);
-void smf8o_destroy(struct smf8o *filter);
-
-void smflp1(struct smf1o *filter, int n, float *y, float *x, float *f);
-void smfhp1(struct smf1o *filter, int n, float *y, float *x, float *f);
-void smflp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfhp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbp2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbs2(struct smf2o *filter, int n, float *y, float *x, float *f, float *Q);
-void smflp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfhp3(struct smf3o *filter, int n, float *y, float *x, float *f, float *Q);
-void smflp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfhp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbp4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbs4(struct smf4o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbp6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbs6(struct smf6o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbp8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q);
-void smfbs8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q);
-
 #define SMF_BWP21	 1.414213562373095f
 #define SMF_BWP31	1.0f
 #define SMF_BWP41	0.7653668647301796f
@@ -184,5 +39,130 @@ void smfbs8(struct smf8o *filter, int n, float *y, float *x, float *f, float *Q)
 #define SMF_BWP84	 1.961570560806461f
 
 #define SMF_BWQ		0.7071067811865475f
+
+#define SMF_FMAX	0.3195f
+#define SMF_FMIN	0.0001f
+
+static inline float smff2w_2(float f) {
+	return tanf((f > SMF_FMAX ? SMF_FMAX : f < SMF_FMIN ? SMF_FMIN : f)
+		    * (float) M_PI);
+}
+
+static inline float smf1lowv(float *u, float x, float w_2) {
+	float t1, t2, u1;
+	u1 = u[0];
+	t1 = (x - u1) / (1.0f + w_2);
+	t2 = u1 + w_2 * t1;
+	u1 = w_2 * t1 + t2;
+	u[0] = SMFPNORM(u1);
+	return t2;
+}
+
+static inline float smf1highv(float *u, float x, float w_2) {
+	float t1, t2, u1;
+	u1 = u[0];
+	t1 = (x - u1) / (1.0f + w_2);
+	t2 = u1 + w_2 * t1;
+	u1 = w_2 * t1 + t2;
+	u[0] = SMFPNORM(u1);
+	return t1;
+}
+
+static inline void smf1splitv(float *u, float *low, float *high, float x,
+			      float w_2) {
+	float t1, t2, u1;
+	u1 = u[0];
+	t1 = (x - u1) / (1.0f + w_2);
+	t2 = u1 + w_2 * t1;
+	u1 = w_2 * t1 + t2;
+	u[0] = SMFPNORM(u1);
+	*low = t2;
+	*high = t1;
+}
+
+static inline float smf2lowv(float *u, float x, float w_2, float a) {
+	float t1, t2, t3, u1, u2;
+	u1 = u[0];
+	u2 = u[1];
+	t1 = (x - (w_2 + a) * u1 - u2) / (1.0f + a * w_2 + w_2 * w_2);
+	t2 = u1 + w_2 * t1;
+	t3 = u2 + w_2 * t2;
+	u1 = w_2 * t1 + t2;
+	u2 = w_2 * t2 + t3;
+	u[0] = SMFPNORM(u1);
+	u[1] = SMFPNORM(u2);
+	return t3;
+}
+
+static inline float smf2highv(float *u, float x, float w_2, float a) {
+	float t1, t2, t3, u1, u2;
+	u1 = u[0];
+	u2 = u[1];
+	t1 = (x - (w_2 + a) * u1 - u2) / (1.0f + a * w_2 + w_2 * w_2);
+	t2 = u1 + w_2 * t1;
+	t3 = u2 + w_2 * t2;
+	u1 = w_2 * t1 + t2;
+	u2 = w_2 * t2 + t3;
+	u[0] = SMFPNORM(u1);
+	u[1] = SMFPNORM(u2);
+	return t1;
+}
+
+static inline float smf2bandv(float *u, float x, float w_2, float a) {
+	float t1, t2, t3, u1, u2;
+	u1 = u[0];
+	u2 = u[1];
+	t1 = (x - (w_2 + a) * u1 - u2) / (1.0f + a * w_2 + w_2 * w_2);
+	t2 = u1 + w_2 * t1;
+	t3 = u2 + w_2 * t2;
+	u1 = w_2 * t1 + t2;
+	u2 = w_2 * t2 + t3;
+	u[0] = SMFPNORM(u1);
+	u[1] = SMFPNORM(u2);
+	return t2;
+}
+
+static inline void smf2splitv(float *u, float *low, float *high, float x,
+			      float w_2, float a) {
+	float t1, t2, t3, u1, u2;
+	u1 = u[0];
+	u2 = u[1];
+	t1 = (x - (w_2 + a) * u1 - u2) / (1.0f + a * w_2 + w_2 * w_2);
+	t2 = u1 + w_2 * t1;
+	t3 = u2 + w_2 * t2;
+	u1 = w_2 * t1 + t2;
+	u2 = w_2 * t2 + t3;
+	u[0] = SMFPNORM(u1);
+	u[1] = SMFPNORM(u2);
+	*low = t3;
+	*high = t1;
+}
+
+void smf1low(float *u, int n, float *y, float *x, float *f);
+void smf1high(float *u, int n, float *y, float *x, float *f);
+void smf2low(float *u, int n, float *y, float *x, float *f, float *r);
+void smf2high(float *u, int n, float *y, float *x, float *f, float *r);
+void smf2band(float *u, int n, float *y, float *x, float *f, float *r);
+void smf3low(float *u, int n, float *y, float *x, float *f, float *r);
+void smf3high(float *u, int n, float *y, float *x, float *f, float *r);
+void smf4low(float *u, int n, float *y, float *x, float *f, float *r);
+void smf4high(float *u, int n, float *y, float *x, float *f, float *r);
+void smf4band(float *u, int n, float *y, float *x, float *f, float *r);
+void smf6band(float *u, int n, float *y, float *x, float *f, float *r);
+void smf8band(float *u, int n, float *y, float *x, float *f, float *r);
+
+/* requires u[6] */
+static inline void smf4linkwitz_rileyv(float *u, float *low, float *high, float x, float w_2) {
+	float t1, t2;
+	smf2splitv(u, &t1, &t2, x, w_2, SMF_BWP21);
+	*low = smf2lowv(u+2, t1, w_2, SMF_BWP21);
+	*high = smf2highv(u+4, t2, w_2, SMF_BWP21);
+}
+
+/* requires u[6] multiplied by 1/(2 bw) */
+void smf4split(float *u, int n, float **y, float *x, float *bw);
+
+void smf3lowres(float *u, int n, float *y, float *x, float *f, float *r);
+void smf4lowres(float *u, int n, float *y, float *x, float *f, float *r);
 
 #endif /* ! SONICMATHS_FILTER_H */

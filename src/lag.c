@@ -43,9 +43,9 @@ void smlag(struct smlag *lag, int n, float *y, float *x, float *t) {
 		if (_x != x1) {
 			xo = x1;
 		}
-		_y = y1 + copysignf(_x - xo, _x - y1) / T;
-		if ((_y <= _x && _x <= y1)
-		    || (_y >= _x && _x >= y1)) {
+		_y = y1 + (_x - xo) / T;
+		if ((xo <= _x && _y > _x)
+		    || (_y < _x)) {
 			_y = _x;
 		}
 		x1 = _x;
